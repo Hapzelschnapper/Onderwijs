@@ -410,7 +410,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.09</span>
+    <span class="version-badge">v1.11</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -549,8 +549,13 @@ Beschikbare bronnen (gebruik UITSLUITEND onderstaande URL's als je een link geef
 Werkwijze:
 - Stel ALTIJD precies één korte, concrete vraag per beurt. Nooit meerdere vragen tegelijk.
 - Bouw voort op eerdere antwoorden; vraag door bij vage antwoorden.
-- Vraag onder andere naar: aard van de zorgen (leren/gedrag/sociaal-emotioneel/lichamelijk), duur en frequentie, wat de school al heeft geprobeerd en met welk effect, of er diagnostiek/vermoeden van een stoornis is, veiligheid, impact op ontwikkeling, en of er al iets speelt op het gebied van thuissituatie/jeugdhulp waar het CJG een rol in heeft of kan hebben.
-- SPECIALE VRAAGVORM voor "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER per gesprek. Dit is een HARDE OPMAAKEIS, geen vrijblijvende suggestie: je antwoord moet in dat ene geval LETTERLIJK beginnen met "INTERVENTIES:" (precies dat woord, met dubbele punt, als allereerste tekens van je antwoord) gevolgd door alleen een kort inleidend zinnetje. Voorbeeld van een correct antwoord: "INTERVENTIES: Wat heeft de school tot nu toe al geprobeerd?" Voeg GEEN losse opties/opsomming toe — de app toont daarvoor zelf automatisch een aanvinkbare lijst. Vergeet nooit deze marker bij deze specifieke vraag, ook niet als je de vraag zelf al in andere bewoordingen hebt geformuleerd. Het antwoord dat je hierna terugkrijgt is een door de gebruiker samengestelde lijst van aangevinkte interventies (en eventueel een eigen toevoeging) — behandel dat gewoon als het antwoord op deze vraag en ga verder met je volgende vraag.
+- Vraag onder andere naar: aard van de zorgen ZOALS DIE ZICH OP SCHOOL UITEN (leren/gedrag/sociaal-emotioneel/lichamelijk), duur en frequentie op school, wat de school al heeft geprobeerd en met welk effect, of er diagnostiek/vermoeden van een stoornis is (voor zover al bekend/gemeld, niet als eigen onderzoek), veiligheid op school, en impact op het functioneren/de ontwikkeling OP SCHOOL.
+- HARDE GRENS: jij bent geen zorgverlener, arts of hulpverlener en voert GEEN klinische, medische of psychosociale intake uit. Stel NOOIT vragen die op een anamnese of gezinsonderzoek lijken — bijvoorbeeld niet vragen naar een mogelijke oorzaak zoals een scheiding, verhuizing, ingrijpende gebeurtenis, medische voorgeschiedenis, of andere levensgebeurtenissen als losstaand onderzoeksthema. Dat is niet jouw rol, en niet nodig om het ondersteuningsniveau te bepalen. Blijf bij elke vraag expliciet gericht op wat dit betekent voor het FUNCTIONEREN OP SCHOOL en de ONDERWIJSONDERSTEUNING die nodig is — niet op de onderliggende medische/psychologische oorzaak. Herformuleer een vraag die toch die kant opgaat direct terug naar de onderwijskundige impact (bijv. niet "is er recent iets veranderd in het gezin?" maar "merkt de school al langere tijd hetzelfde patroon, of is dit iets van de laatste tijd?").
+- Thuissituatie/jeugdhulp mag je hooguit kort en zijdelings noemen — alleen om te peilen of er al jeugdhulp/CJG-betrokkenheid is (relevant voor je latere vervolgstap-suggestie), nooit als eigen exploratielijn.
+- SPECIALE VRAAGVORM voor "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER per gesprek. Dit is een HARDE OPMAAKEIS, geen vrijblijvende suggestie: je antwoord moet in dat ene geval LETTERLIJK beginnen met "INTERVENTIES:" (precies dat woord, met dubbele punt, als allereerste tekens van je antwoord) gevolgd door alleen een kort inleidend zinnetje. Op de REGEL DAARNA voeg je ALTIJD toe: "CATEGORIEEN:" gevolgd door een kommagescheiden lijst van de categorieën die relevant zijn voor DEZE specifieke casus, gekozen uit EXACT deze 7 namen (kopieer ze letterlijk, geen eigen variaties): "Leren / didactisch", "Gedrag", "Sociaal-emotioneel", "Fysiek / medisch / zintuiglijk", "Overleg & samenwerking", "Diagnostiek", "Thuissituatie / jeugdhulp". Kies alleen categorieën die daadwerkelijk relevant zijn voor het probleem zoals beschreven (meestal 2-4 van de 7) — irrelevante categorieën laat je gewoon weg. Voorbeeld bij een casus over broekplassen op school: "Leren / didactisch" en "Diagnostiek" zijn dan meestal niet relevant, terwijl "Fysiek / medisch / zintuiglijk" en "Overleg & samenwerking" dat wel zijn. "Overleg & samenwerking" is bijna altijd relevant (gesprekken met ouders/school horen er meestal bij), tenzij je een harde reden hebt om die uit te sluiten. Volledig voorbeeld van een correct antwoord:
+"INTERVENTIES: Wat heeft de school tot nu toe al geprobeerd?
+CATEGORIEEN: Fysiek / medisch / zintuiglijk, Sociaal-emotioneel, Overleg & samenwerking"
+Voeg verder GEEN losse opties/opsomming toe — de app toont daarvoor zelf automatisch een aanvinkbare lijst, gefilterd op de categorieën die jij opgeeft. Vergeet nooit deze twee regels bij deze specifieke vraag, ook niet als je de vraag zelf al in andere bewoordingen hebt geformuleerd. Het antwoord dat je hierna terugkrijgt is een door de gebruiker samengestelde lijst van aangevinkte interventies (en eventueel een eigen toevoeging) — behandel dat gewoon als het antwoord op deze vraag en ga verder met je volgende vraag.
 - Stel maximaal 6 vragen (de INTERVENTIES-vraag telt hierin gewoon mee als 1 vraag). Zodra je genoeg weet (vaak na 4-6 vragen), geef je een ADVIES.
 - Het advies begin je altijd met de regel "ADVIES:" gevolgd door:
   1. Het meest waarschijnlijke niveau (basisondersteuning / extra ondersteuning / gespecialiseerde ondersteuning)
@@ -772,7 +777,7 @@ const INTERVENTION_GROUPS = [
   },
 ];
 
-function showChecklistBubble(introText) {
+function showChecklistBubble(introText, categoryFilter) {
   const wrap = document.createElement('div');
   wrap.className = 'checklist-bubble';
 
@@ -781,17 +786,37 @@ function showChecklistBubble(introText) {
   q.textContent = introText || "Wat heeft de school tot nu toe al geprobeerd?";
   wrap.appendChild(q);
 
+  // Filter op de door de AI opgegeven categorieën (case-insensitief vergeleken met de vaste
+  // categorienamen hierboven). Geen filter opgegeven, of geen enkele match (bv. AI gaf een
+  // onherkenbare/verzonnen categorienaam) -> veilig terugvallen op de VOLLEDIGE lijst, zodat er
+  // nooit relevante opties onbedoeld verdwijnen door een parseer- of matchfout.
+  let groupsToShow = INTERVENTION_GROUPS;
+  let filtered = false;
+  if (Array.isArray(categoryFilter) && categoryFilter.length) {
+    const matches = INTERVENTION_GROUPS.filter(g => categoryFilter.includes(g.category.toLowerCase()));
+    if (matches.length) { groupsToShow = matches; filtered = true; }
+  }
+
+  if (filtered) {
+    const filterNote = document.createElement('div');
+    filterNote.className = 'checklist-hint';
+    filterNote.style.marginBottom = '8px';
+    filterNote.style.textAlign = 'left';
+    filterNote.textContent = 'Deze lijst is toegespitst op de besproken casus. Mis je iets? Vul het in bij "Anders, namelijk" hieronder.';
+    wrap.appendChild(filterNote);
+  }
+
   const itemsContainer = document.createElement('div');
   itemsContainer.className = 'checklist-items-scroll';
   wrap.appendChild(itemsContainer);
 
-  // checkboxRefs houdt {cb, label, number} bij, doorlopend genummerd over ALLE groepen heen --
-  // zodat de nummers die in het samengevatte antwoord terugkomen consistent en uniek blijven,
-  // ongeacht bij welke categorie een item hoort.
+  // checkboxRefs houdt {cb, label, number} bij, doorlopend genummerd over de GETOONDE groepen heen
+  // (niet over alle 7, als er gefilterd is) -- zodat de nummers die in het samengevatte antwoord
+  // terugkomen consistent en uniek blijven, ongeacht bij welke categorie een item hoort.
   const checkboxRefs = [];
   let runningNumber = 1;
 
-  INTERVENTION_GROUPS.forEach(group => {
+  groupsToShow.forEach(group => {
     const heading = document.createElement('div');
     heading.className = 'checklist-group-heading';
     heading.textContent = group.category;
@@ -1094,20 +1119,29 @@ async function sendTurn(userText) {
       setInputEnabled(false);
       inputEl.placeholder = "Klik op 'Nieuwe casus starten' om opnieuw te beginnen";
     } else if (/^INTERVENTIES:/i.test(reply.trim())) {
-      const introText = reply.trim().replace(/^INTERVENTIES:\s*/i, '');
+      const trimmedReply = reply.trim();
+      // Introtekst = alleen de eerste regel (na de marker), niet de eventuele CATEGORIEEN-regel erna.
+      const introMatch = trimmedReply.match(/^INTERVENTIES:\s*(.*?)(?:\n|$)/i);
+      const introText = introMatch ? introMatch[1].trim() : '';
+      // CATEGORIEEN-regel is optioneel herkend -- ontbreekt hij of is de inhoud onherkenbaar, dan
+      // valt showChecklistBubble vanzelf terug op de volledige, ongefilterde lijst (zie daar).
+      const catMatch = trimmedReply.match(/CATEGORIEEN:\s*(.+)$/im);
+      const categoryFilter = catMatch
+        ? catMatch[1].split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+        : null;
       interventionsAsked = true;
       questionCount++;
       updateProgress();
-      showChecklistBubble(introText);
+      showChecklistBubble(introText, categoryFilter);
       setInputEnabled(false); // gewone tekstveld pauzeren -- de checklist regelt hier het antwoord
       inputEl.placeholder = "Beantwoord eerst de checklist hierboven...";
     } else if (!interventionsAsked && INTERVENTIONS_FALLBACK_PATTERN.test(reply.trim())) {
-      // Vangnet: AI vergat de marker, maar de vraag gaat inhoudelijk overduidelijk over "wat is er
-      // al geprobeerd" -- toon de checklist alsnog, met de eigen vraagtekst van de AI als inleiding.
+      // Vangnet: AI vergat de marker (en dus ook de categorieënfilter) -- toon de volledige,
+      // ongefilterde checklist, met de eigen vraagtekst van de AI als inleiding.
       interventionsAsked = true;
       questionCount++;
       updateProgress();
-      showChecklistBubble(reply.trim());
+      showChecklistBubble(reply.trim(), null);
       setInputEnabled(false);
       inputEl.placeholder = "Beantwoord eerst de checklist hierboven...";
     } else {
