@@ -454,7 +454,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.16</span>
+    <span class="version-badge">v1.17</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -520,9 +520,20 @@
 
       <div class="share-section">
         <label for="shareLinkOutput">Deel-link voor een collega (bevat de sleutel!)</label>
-        <button id="generateShareLinkBtn">Genereer deel-link</button>
-        <input type="text" id="shareLinkOutput" readonly placeholder="Klik op 'Genereer deel-link'..." style="display:none;">
+        <button id="generateShareLinkBtn">Genereer deel-link + deel-code</button>
+        <input type="text" id="shareLinkOutput" readonly placeholder="Klik op 'Genereer deel-link + deel-code'..." style="display:none;">
+        <div id="shareCodeBlock" style="display:none;">
+          <label for="shareCodeOutput" style="margin-top:10px;">Deel-code (plak dit als platte tekst — betrouwbaarder via WhatsApp/chatapps dan de klikbare link hierboven)</label>
+          <input type="text" id="shareCodeOutput" readonly>
+        </div>
         <div class="checklist-hint" id="shareLinkHint" style="display:none;">Link gekopieerd. Deel 'm net zo voorzichtig als de sleutel zelf — niet in een groepsapp of publiek kanaal.</div>
+      </div>
+
+      <div class="share-section">
+        <label for="receiveShareCodeInput">Deel-code ontvangen van een collega</label>
+        <input type="text" id="receiveShareCodeInput" placeholder="Plak hier de deel-code...">
+        <button id="applyShareCodeBtn" style="margin-top:8px;">Toepassen</button>
+        <div class="checklist-hint" id="receiveShareCodeHint"></div>
       </div>
     </div>
   </div>
@@ -791,13 +802,46 @@ document.getElementById('generateShareLinkBtn').addEventListener('click', async 
   outputField.value = shareUrl;
   hintEl.style.display = 'block';
 
+  // Losse code (zonder URL eromheen) tonen als betrouwbaarder alternatief -- sommige chatapps
+  // (met name WhatsApp/Instagram op iOS) knippen het deel na de # bij een klikbare link soms
+  // stilzwijgend weg. Platte tekst wordt door die apps niet "slim" verwerkt en komt dus intact aan.
+  const codeBlock = document.getElementById('shareCodeBlock');
+  const codeOutput = document.getElementById('shareCodeOutput');
+  codeBlock.style.display = 'block';
+  codeOutput.value = encoded;
+
   try {
     await navigator.clipboard.writeText(shareUrl);
-    hintEl.textContent = 'Link gekopieerd naar klembord. Deel \'m net zo voorzichtig als de sleutel zelf — niet in een groepsapp of publiek kanaal.';
+    hintEl.textContent = 'Link gekopieerd naar klembord. Werkt de link niet bij je collega (bv. via WhatsApp), stuur dan de deel-code hieronder als platte tekst. Deel beide net zo voorzichtig als de sleutel zelf — niet in een groepsapp of publiek kanaal.';
   } catch (e) {
     outputField.select();
-    hintEl.textContent = "Kopiëren naar klembord lukte niet automatisch — selecteer de link hierboven en kopieer 'm handmatig. Deel 'm net zo voorzichtig als de sleutel zelf.";
+    hintEl.textContent = "Kopiëren naar klembord lukte niet automatisch — selecteer de link of code hierboven en kopieer 'm handmatig. Deel ze net zo voorzichtig als de sleutel zelf.";
   }
+});
+
+document.getElementById('applyShareCodeBtn').addEventListener('click', () => {
+  const receiveHint = document.getElementById('receiveShareCodeHint');
+  let raw = document.getElementById('receiveShareCodeInput').value.trim();
+  if (!raw) {
+    receiveHint.style.color = '#a33';
+    receiveHint.textContent = 'Plak eerst een deel-code.';
+    return;
+  }
+  // Ook een volledige, per ongeluk geplakte deel-LINK accepteren (niet alleen de kale code) --
+  // extraheer dan gewoon het stuk na "#share=".
+  const linkMatch = raw.match(/#share=(.+)$/);
+  if (linkMatch) raw = linkMatch[1];
+
+  const decoded = decodeShareConfig(raw);
+  if (!decoded || !decoded.provider) {
+    receiveHint.style.color = '#a33';
+    receiveHint.textContent = 'Deze code kon niet worden gelezen -- controleer of alles compleet is geplakt.';
+    return;
+  }
+  applyDecodedShareConfig(decoded, 'een geplakte deel-code');
+  document.getElementById('receiveShareCodeInput').value = '';
+  receiveHint.style.color = '#4a7a34';
+  receiveHint.textContent = 'Instellingen ingevuld -- controleer ze hierboven en klik op "Opslaan".';
 });
 
 // Bij het openen van een ontvangen deel-link: instellingen VOORVULLEN maar NIET automatisch
@@ -805,14 +849,8 @@ document.getElementById('generateShareLinkBtn').addEventListener('click', async 
 // klikken voordat het op hun apparaat wordt bewaard. Het fragment wordt direct daarna uit de
 // adresbalk/geschiedenis verwijderd (history.replaceState), zodat de sleutel niet nodeloos
 // zichtbaar blijft staan of per ongeluk nogmaals gedeeld wordt (bijv. via een gekopieerde URL).
-function handleIncomingShareLink() {
-  const hash = window.location.hash;
-  const match = hash.match(/^#share=(.+)$/);
-  if (!match) return;
-
-  const decoded = decodeShareConfig(match[1]);
-  history.replaceState(null, '', window.location.pathname + window.location.search);
-  if (!decoded || !decoded.provider) return;
+function applyDecodedShareConfig(decoded, sourceLabel) {
+  if (!decoded || !decoded.provider) return false;
 
   // Tabblad Instellingen openen en velden voorvullen (nog NIET opslaan naar localStorage).
   document.querySelector('.tab-btn[data-tab="settings"]').click();
@@ -822,10 +860,23 @@ function handleIncomingShareLink() {
   if (decoded.apiKey) apiKeyInput.value = decoded.apiKey;
   if (decoded.model) modelInput.value = decoded.model;
 
+  const existingBanner = document.querySelector('#panel-settings .share-banner');
+  if (existingBanner) existingBanner.remove();
   const banner = document.createElement('div');
   banner.className = 'share-banner';
-  banner.textContent = 'Instellingen ontvangen via een deel-link. Controleer ze hieronder en klik op "Opslaan" om ze op dit apparaat te bewaren.';
+  banner.textContent = 'Instellingen ontvangen via ' + (sourceLabel || 'een deel-link') + '. Controleer ze hieronder en klik op "Opslaan" om ze op dit apparaat te bewaren.';
   document.querySelector('#panel-settings .settings').prepend(banner);
+  return true;
+}
+
+function handleIncomingShareLink() {
+  const hash = window.location.hash;
+  const match = hash.match(/^#share=(.+)$/);
+  if (!match) return;
+
+  const decoded = decodeShareConfig(match[1]);
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  applyDecodedShareConfig(decoded, 'een deel-link');
 }
 
 /* ---------- Chat logic ---------- */
