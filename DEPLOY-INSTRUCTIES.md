@@ -16,9 +16,24 @@ GitHub Pages), verdwijnt die beperking vanzelf.
 
 ## Stap 1 — Repo klaarzetten
 
-Zet `ondersteuningsniveau-wizard.html` (hernoem naar `index.html`) in je
-GitHub-repo. Verder is er niets nodig — geen `api/`-map, geen
-build-configuratie.
+Zet de volgende bestanden allemaal **naast elkaar, in de root** van je
+GitHub-repo (dus niet in een submap):
+
+```
+jouw-repo/
+├── index.html
+├── manifest.json
+├── sw.js
+├── icon-192.png
+├── icon-512.png
+├── apple-touch-icon.png
+└── favicon-32.png
+```
+
+De laatste vijf bestanden zorgen ervoor dat de wizard als app op het
+startscherm van Android/iPhone geïnstalleerd kan worden (zie "Installeren
+op je telefoon" hieronder). Zonder deze bestanden werkt de wizard nog
+gewoon in de browser, maar dan zonder installatie-optie.
 
 ## Stap 2 — GitHub Pages aanzetten
 
@@ -47,6 +62,23 @@ iedereen die de pagina gebruikt. Prima voor persoonlijk gebruik of een
 kleine kring vertrouwde collega's. Wil je de pagina breder delen, zet dan
 een uitgavenlimiet op die sleutel in het dashboard van de betreffende
 provider.
+
+## Installeren op je telefoon
+
+Zodra de wizard live staat op GitHub Pages, kun je 'm als app installeren:
+
+**Android (Chrome):**
+1. Open de GitHub Pages-link in Chrome
+2. Tik op het menu (drie puntjes rechtsboven) → **"App installeren"** of
+   **"Toevoegen aan startscherm"**
+3. Het icoon verschijnt op je startscherm en opent daarna zonder
+   adresbalk, als een gewone app
+
+**iPhone (Safari — dit werkt alleen via Safari, niet via Chrome op iOS):**
+1. Open de GitHub Pages-link in Safari
+2. Tik op het deel-icoon (vierkantje met pijl omhoog) onderin
+3. Kies **"Zet op beginscherm"**
+4. Het icoon verschijnt op je startscherm
 
 ## Optioneel: proxy-server.js / api/chat.js
 

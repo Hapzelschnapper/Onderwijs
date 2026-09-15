@@ -2,8 +2,21 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Ondersteuningsniveau-adviseur</title>
+
+<!-- PWA: installeerbaar op Android (via manifest) en iPhone (via Apple-specifieke tags) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#b5651d">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<!-- iOS/Safari: eigen tags nodig, negeert manifest.json grotendeels -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ondersteuning">
+
 <style>
   :root {
     --bg: #f7f5f2;
@@ -454,7 +467,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.25</span>
+    <span class="version-badge">v1.26</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -1505,6 +1518,15 @@ handleIncomingShareLink();
 
 updateStatusLine();
 startWizard();
+
+// Service worker registreren -- nodig als technische voorwaarde zodat Chrome/Android de
+// app als installeerbaar herkent ("Toevoegen aan startscherm" / installatiebanner). Faalt dit
+// (bv. oudere browser), dan werkt de wizard gewoon door, alleen zonder installatie-optie.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* geen probleem, app blijft werken */ });
+  });
+}
 </script>
 </body>
 </html>
