@@ -550,7 +550,7 @@ Werkwijze:
 - Stel ALTIJD precies één korte, concrete vraag per beurt. Nooit meerdere vragen tegelijk.
 - Bouw voort op eerdere antwoorden; vraag door bij vage antwoorden.
 - Vraag onder andere naar: aard van de zorgen (leren/gedrag/sociaal-emotioneel/lichamelijk), duur en frequentie, wat de school al heeft geprobeerd en met welk effect, of er diagnostiek/vermoeden van een stoornis is, veiligheid, impact op ontwikkeling, en of er al iets speelt op het gebied van thuissituatie/jeugdhulp waar het CJG een rol in heeft of kan hebben.
-- SPECIALE VRAAGVORM voor "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER per gesprek (niet vaker), en begin je antwoord in dat ene geval ALTIJD met de regel "INTERVENTIES:" gevolgd door een kort inleidend zinnetje (bijv. "Wat heeft de school tot nu toe al geprobeerd?"). Voeg verder niets toe — de app toont hierbij automatisch een aanvinkbare lijst met veelvoorkomende interventies, jij hoeft dus geen losse opties op te sommen. Het antwoord dat je hierna terugkrijgt is een door de gebruiker samengestelde lijst van aangevinkte interventies (en eventueel een eigen toevoeging) — behandel dat gewoon als het antwoord op deze vraag en ga verder met je volgende vraag.
+- SPECIALE VRAAGVORM voor "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER per gesprek. Dit is een HARDE OPMAAKEIS, geen vrijblijvende suggestie: je antwoord moet in dat ene geval LETTERLIJK beginnen met "INTERVENTIES:" (precies dat woord, met dubbele punt, als allereerste tekens van je antwoord) gevolgd door alleen een kort inleidend zinnetje. Voorbeeld van een correct antwoord: "INTERVENTIES: Wat heeft de school tot nu toe al geprobeerd?" Voeg GEEN losse opties/opsomming toe — de app toont daarvoor zelf automatisch een aanvinkbare lijst. Vergeet nooit deze marker bij deze specifieke vraag, ook niet als je de vraag zelf al in andere bewoordingen hebt geformuleerd. Het antwoord dat je hierna terugkrijgt is een door de gebruiker samengestelde lijst van aangevinkte interventies (en eventueel een eigen toevoeging) — behandel dat gewoon als het antwoord op deze vraag en ga verder met je volgende vraag.
 - Stel maximaal 6 vragen (de INTERVENTIES-vraag telt hierin gewoon mee als 1 vraag). Zodra je genoeg weet (vaak na 4-6 vragen), geef je een ADVIES.
 - Het advies begin je altijd met de regel "ADVIES:" gevolgd door:
   1. Het meest waarschijnlijke niveau (basisondersteuning / extra ondersteuning / gespecialiseerde ondersteuning)
@@ -563,8 +563,15 @@ Werkwijze:
 
 let history = [];
 let questionCount = 0;
+let interventionsAsked = false;
 const MAX_QUESTIONS = 6;
 let awaitingResponse = false;
+
+// Vangnet: de AI volgt de INTERVENTIES:-marker-instructie niet altijd 100% betrouwbaar (taalmodellen
+// zijn geen deterministische opmaakmachines). Herkent deze vraag ook aan de inhoud, zodat de checklist
+// alsnog verschijnt als de marker per ongeluk ontbreekt maar de vraag inhoudelijk overduidelijk over
+// "wat is er al geprobeerd" gaat.
+const INTERVENTIONS_FALLBACK_PATTERN = /(wat\s+(heeft|hebben)\s+(de\s+)?(school|leerkracht|leraar|jullie|zij|ze)\b[^?]{0,80}(geprobeerd|gedaan|ingezet|ondernomen))|(welke\s+(interventies|aanpassingen|maatregelen)\b[^?]{0,80}(school|leerkracht|al)\b)/i;
 
 const chatEl = document.getElementById('chat');
 const inputEl = document.getElementById('userInput');
@@ -1088,10 +1095,20 @@ async function sendTurn(userText) {
       inputEl.placeholder = "Klik op 'Nieuwe casus starten' om opnieuw te beginnen";
     } else if (/^INTERVENTIES:/i.test(reply.trim())) {
       const introText = reply.trim().replace(/^INTERVENTIES:\s*/i, '');
+      interventionsAsked = true;
       questionCount++;
       updateProgress();
       showChecklistBubble(introText);
       setInputEnabled(false); // gewone tekstveld pauzeren -- de checklist regelt hier het antwoord
+      inputEl.placeholder = "Beantwoord eerst de checklist hierboven...";
+    } else if (!interventionsAsked && INTERVENTIONS_FALLBACK_PATTERN.test(reply.trim())) {
+      // Vangnet: AI vergat de marker, maar de vraag gaat inhoudelijk overduidelijk over "wat is er
+      // al geprobeerd" -- toon de checklist alsnog, met de eigen vraagtekst van de AI als inleiding.
+      interventionsAsked = true;
+      questionCount++;
+      updateProgress();
+      showChecklistBubble(reply.trim());
+      setInputEnabled(false);
       inputEl.placeholder = "Beantwoord eerst de checklist hierboven...";
     } else {
       questionCount++;
@@ -1138,6 +1155,7 @@ function startWizard() {
   errorBox.innerHTML = '';
   history = [];
   questionCount = 0;
+  interventionsAsked = false;
   updateProgress();
   setInputEnabled(false);
   inputEl.placeholder = "Typ je antwoord...";
