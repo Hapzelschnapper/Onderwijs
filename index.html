@@ -146,6 +146,13 @@
     color: var(--advies-border);
     margin-bottom: 6px;
   }
+  .bubble ul, .bubble ol {
+    margin: 4px 0 8px;
+    padding-left: 20px;
+  }
+  .bubble li {
+    margin-bottom: 3px;
+  }
   .typing {
     align-self: flex-start;
     display: flex;
@@ -544,7 +551,7 @@ function addBubble(role, text) {
   if (role === 'advies') {
     div.className = 'bubble advies';
     const cleanText = text.replace(/^ADVIES:\s*/i, '');
-    div.innerHTML = '<span class="label">Advies</span>' + linkify(cleanText);
+    div.innerHTML = '<span class="label">Advies</span>' + renderFormattedContent(cleanText);
   } else {
     div.className = 'bubble ' + role;
     div.textContent = text;
@@ -560,12 +567,75 @@ function escapeHtml(str) {
   return d.innerHTML.replace(/\n/g, '<br>');
 }
 
-function linkify(str) {
-  const escaped = escapeHtml(str);
+// Escaped tekst zonder \n->br conversie: renderMarkdownLite handelt regeleinden zelf af
+// (nodig om lijsten/koppen als aparte blokken te kunnen opbouwen i.p.v. platte <br>'s).
+function escapeHtmlPlain(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Inline opmaak binnen één regel: **vet** en *cursief*. Werkt op al-geëscapete tekst,
+// dus veilig tegen HTML-injectie vanuit AI-tekst.
+function inlineMarkdown(str) {
+  return str
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+
+// Lichte markdown-naar-HTML-conversie: **vet**, *cursief*, #koppen (als vet weergegeven),
+// opsommingslijsten (- of *) en genummerde lijsten (1. 2. ...) worden echt gerenderd i.p.v.
+// als letterlijke sterretjes/koppeltekens getoond. Altijd eerst volledig ge-escaped (veilig
+// tegen HTML-injectie vanuit AI-tekst), pas daarna deze beperkte, veilige tagset toegepast.
+function renderMarkdownLite(rawText) {
+  const escaped = escapeHtmlPlain(rawText);
+  const lines = escaped.split(/\n/);
+  let html = '';
+  let listType = null; // 'ul' | 'ol' | null
+
+  function closeList() {
+    if (listType === 'ul') html += '</ul>';
+    if (listType === 'ol') html += '</ol>';
+    listType = null;
+  }
+
+  for (const line of lines) {
+    const bulletMatch = line.match(/^[-*]\s+(.*)/);
+    const numberMatch = line.match(/^\d+\.\s+(.*)/);
+    const headerMatch = line.match(/^#{1,6}\s+(.*)/);
+
+    if (bulletMatch) {
+      if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; }
+      html += '<li>' + inlineMarkdown(bulletMatch[1]) + '</li>';
+    } else if (numberMatch) {
+      if (listType !== 'ol') { closeList(); html += '<ol>'; listType = 'ol'; }
+      html += '<li>' + inlineMarkdown(numberMatch[1]) + '</li>';
+    } else {
+      closeList();
+      if (headerMatch) {
+        html += '<strong>' + inlineMarkdown(headerMatch[1]) + '</strong><br>';
+      } else if (line.trim() === '') {
+        html += '<br>';
+      } else {
+        html += inlineMarkdown(line) + '<br>';
+      }
+    }
+  }
+  closeList();
+  return html;
+}
+
+// Zet plain-text URL's in al-gerenderde HTML om naar klikbare links. Verwacht HTML die al
+// veilig is opgebouwd (via renderMarkdownLite) -- doet zelf geen escaping meer.
+function linkifyHtml(html) {
   const urlPattern = /(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g;
-  return escaped.replace(urlPattern, (url) =>
+  return html.replace(urlPattern, (url) =>
     '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:#7fa66a;text-decoration:underline;">' + url + '</a>'
   );
+}
+
+function renderFormattedContent(text) {
+  return linkifyHtml(renderMarkdownLite(text));
 }
 
 function showTyping() {
