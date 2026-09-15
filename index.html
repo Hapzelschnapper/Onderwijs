@@ -454,7 +454,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.14</span>
+    <span class="version-badge">v1.16</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -747,12 +747,21 @@ document.getElementById('resetSettingsBtn').addEventListener('click', () => {
    stuk platte, decodeerbare tekst zodra iemand de link heeft -- deel 'm dus alleen via een
    kanaal dat je ook zou gebruiken om de sleutel zelf te delen. */
 function encodeShareConfig(config) {
-  return btoa(encodeURIComponent(JSON.stringify(config)));
+  const b64 = btoa(encodeURIComponent(JSON.stringify(config)));
+  // URL-veilige variant (zoals bij JWT's): + -> -, / -> _, en padding-'=' weggelaten. Standaard
+  // base64 bevat namelijk +, / en = -- tekens die messaging-apps (WhatsApp, Teams, SMS, mail) bij
+  // het automatisch herkennen van links regelmatig afknippen (vooral trailing '=') of verkeerd
+  // interpreteren, met een stilzwijgend corrupte sleutel tot gevolg die er in het veld nog wel
+  // "vol" uitziet maar niet meer klopt.
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function decodeShareConfig(encoded) {
-  try { return JSON.parse(decodeURIComponent(atob(encoded))); }
-  catch (e) { return null; }
+  try {
+    let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '='; // weggelaten padding weer aanvullen vóór het decoderen
+    return JSON.parse(decodeURIComponent(atob(b64)));
+  } catch (e) { return null; }
 }
 
 document.getElementById('generateShareLinkBtn').addEventListener('click', async () => {
@@ -1222,6 +1231,7 @@ async function callAI(messages) {
     } catch (e) {
       lastError = e;
       if (/geen sleutel|API-sleutel|no.*api.*key/i.test(e.message)) throw e; // configuratieprobleem, niet zinvol om te herkansen
+      if (/API-fout: (401|403)/.test(e.message)) throw e; // authenticatiefout -- een foute sleutel wordt niet goed door te wachten
       if (attempt < RETRY_DELAYS_MS.length) await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[attempt]));
     }
   }
@@ -1285,12 +1295,18 @@ async function sendTurn(userText) {
     }
   } catch (err) {
     hideTyping();
-    errorBox.innerHTML = '<div class="error">Er ging iets mis bij het ophalen van een antwoord (' + err.message + '). Dit is vaak een voorbijgaande netwerkhapering.</div>'
-      + '<div class="retry-row"><button id="retryBtn">Opnieuw proberen</button></div>';
-    document.getElementById('retryBtn').addEventListener('click', () => {
-      errorBox.innerHTML = '';
-      sendTurn(null); // geen nieuwe gebruikerstekst nodig -- die staat al in history vanaf de vorige (mislukte) poging
-    });
+    const isAuthError = /API-fout: (401|403)/.test(err.message);
+    const explanation = isAuthError
+      ? 'Dit duidt op een authenticatiefout: je API-sleutel klopt niet, is leeg, of hoort niet bij de gekozen provider. Check dit op het tabblad "Instellingen".'
+      : 'Dit is vaak een voorbijgaande netwerkhapering.';
+    errorBox.innerHTML = '<div class="error">Er ging iets mis bij het ophalen van een antwoord (' + err.message + '). ' + explanation + '</div>'
+      + (isAuthError ? '' : '<div class="retry-row"><button id="retryBtn">Opnieuw proberen</button></div>');
+    if (!isAuthError) {
+      document.getElementById('retryBtn').addEventListener('click', () => {
+        errorBox.innerHTML = '';
+        sendTurn(null); // geen nieuwe gebruikerstekst nodig -- die staat al in history vanaf de vorige (mislukte) poging
+      });
+    }
     setInputEnabled(true);
   }
   awaitingResponse = false;
