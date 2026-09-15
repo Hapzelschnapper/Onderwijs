@@ -454,7 +454,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.13</span>
+    <span class="version-badge">v1.14</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -910,7 +910,7 @@ function showChecklistBubble(introText, categoryFilter) {
 
   const q = document.createElement('p');
   q.className = 'checklist-question';
-  q.textContent = introText || "Wat heeft de school tot nu toe al geprobeerd?";
+  q.innerHTML = renderFormattedContent(introText || "Wat heeft de school tot nu toe al geprobeerd?");
   wrap.appendChild(q);
 
   // Filter op de door de AI opgegeven categorieën (case-insensitief vergeleken met de vaste
@@ -1021,6 +1021,11 @@ function addBubble(role, text) {
     div.className = 'bubble advies';
     const cleanText = text.replace(/^ADVIES:\s*/i, '');
     div.innerHTML = '<span class="label">Advies</span>' + renderFormattedContent(cleanText);
+  } else if (role === 'ai') {
+    // AI-vragen kunnen ook markdown-opmaak bevatten (bv. **nadruk**) -- zelfde renderer als het
+    // advies-blok, zodat sterretjes/koppeltekens niet letterlijk zichtbaar blijven.
+    div.className = 'bubble ai';
+    div.innerHTML = renderFormattedContent(text);
   } else {
     div.className = 'bubble ' + role;
     div.textContent = text;
