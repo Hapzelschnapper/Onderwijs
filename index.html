@@ -390,6 +390,50 @@
     text-align: center;
     min-height: 16px;
   }
+  .share-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .share-section label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .share-section button {
+    width: 100%;
+    border: 1px solid var(--accent);
+    background: #fff;
+    color: var(--accent);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .share-section input {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 12px;
+    font-family: monospace;
+    background: #f5f3ef;
+    color: var(--muted);
+  }
+  .share-section .checklist-hint { margin-top: 6px; }
+  .share-banner {
+    background: var(--advies-bubble);
+    border: 1px solid var(--advies-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
   .status-row {
     display: flex;
     align-items: center;
@@ -410,7 +454,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.11</span>
+    <span class="version-badge">v1.13</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -434,9 +478,6 @@
 
   <div class="panel" id="panel-settings">
     <div class="settings">
-      <div class="notice">
-        Alle providers werken gewoon zodra je dit bestand host via een echt <strong>https://</strong>-adres (bijv. GitHub Pages). Open je het bestand lokaal via dubbelklik (<code>file://...</code>), dan blokkeert de browser zelf externe API-aanroepen — dat is geen beperking van DeepSeek/Claude, maar van hoe browsers <code>file://</code>-pagina's behandelen. Je sleutel/endpoint/model worden bij "Opslaan" <strong>onthouden in de browser van dit apparaat</strong> (localStorage), zodat je ze niet telkens opnieuw hoeft in te vullen. Let op: dat betekent ook dat de sleutel in leesbare vorm op dit apparaat blijft staan (zichtbaar via devtools) — gebruik je de pagina op een gedeeld apparaat, klik dan na gebruik op "Terug naar Claude (en opgeslagen sleutel wissen)". De optie "Claude (ingebouwd)" werkt alleen binnen de Claude-omgeving zelf en wordt nooit opgeslagen.
-      </div>
 
       <div class="field">
         <label for="providerSelect">AI-provider</label>
@@ -476,6 +517,13 @@
         <button id="resetSettingsBtn">Terug naar Claude (en opgeslagen sleutel wissen)</button>
       </div>
       <div class="save-confirm" id="saveConfirm"></div>
+
+      <div class="share-section">
+        <label for="shareLinkOutput">Deel-link voor een collega (bevat de sleutel!)</label>
+        <button id="generateShareLinkBtn">Genereer deel-link</button>
+        <input type="text" id="shareLinkOutput" readonly placeholder="Klik op 'Genereer deel-link'..." style="display:none;">
+        <div class="checklist-hint" id="shareLinkHint" style="display:none;">Link gekopieerd. Deel 'm net zo voorzichtig als de sleutel zelf — niet in een groepsapp of publiek kanaal.</div>
+      </div>
     </div>
   </div>
 </div>
@@ -691,6 +739,85 @@ document.getElementById('resetSettingsBtn').addEventListener('click', () => {
   saveConfirm.textContent = 'Teruggezet naar Claude.';
   setTimeout(() => { saveConfirm.textContent = ''; }, 3000);
 });
+
+/* ---------- Deel-link: instellingen (incl. sleutel) doorgeven aan een collega ----------
+   De configuratie wordt gecodeerd in het URL-fragment (#share=...), NIET als een gewone
+   queryparameter -- een fragment wordt nooit naar een server verstuurd (ook niet naar
+   GitHub Pages zelf), dus de sleutel komt niet in serverlogs terecht. Het blijft wel een
+   stuk platte, decodeerbare tekst zodra iemand de link heeft -- deel 'm dus alleen via een
+   kanaal dat je ook zou gebruiken om de sleutel zelf te delen. */
+function encodeShareConfig(config) {
+  return btoa(encodeURIComponent(JSON.stringify(config)));
+}
+
+function decodeShareConfig(encoded) {
+  try { return JSON.parse(decodeURIComponent(atob(encoded))); }
+  catch (e) { return null; }
+}
+
+document.getElementById('generateShareLinkBtn').addEventListener('click', async () => {
+  const provider = providerSelect.value;
+  if (provider === 'claude') {
+    saveConfirm.style.color = '#a33';
+    saveConfirm.textContent = 'Kies eerst een provider met een eigen sleutel (DeepSeek / Claude eigen sleutel / Aangepast) om te delen.';
+    return;
+  }
+  const shareConfig = {
+    provider: provider,
+    endpoint: endpointInput.value.trim(),
+    apiKey: apiKeyInput.value.trim(),
+    model: modelInput.value.trim()
+  };
+  if (!shareConfig.apiKey) {
+    saveConfirm.style.color = '#a33';
+    saveConfirm.textContent = 'Vul eerst een API-sleutel in voordat je een deel-link genereert.';
+    return;
+  }
+  const encoded = encodeShareConfig(shareConfig);
+  const shareUrl = window.location.origin + window.location.pathname + '#share=' + encoded;
+
+  const outputField = document.getElementById('shareLinkOutput');
+  const hintEl = document.getElementById('shareLinkHint');
+  outputField.style.display = 'block';
+  outputField.value = shareUrl;
+  hintEl.style.display = 'block';
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    hintEl.textContent = 'Link gekopieerd naar klembord. Deel \'m net zo voorzichtig als de sleutel zelf — niet in een groepsapp of publiek kanaal.';
+  } catch (e) {
+    outputField.select();
+    hintEl.textContent = "Kopiëren naar klembord lukte niet automatisch — selecteer de link hierboven en kopieer 'm handmatig. Deel 'm net zo voorzichtig als de sleutel zelf.";
+  }
+});
+
+// Bij het openen van een ontvangen deel-link: instellingen VOORVULLEN maar NIET automatisch
+// opslaan -- de ontvanger ziet expliciet wat er is meegestuurd en moet zelf op "Opslaan"
+// klikken voordat het op hun apparaat wordt bewaard. Het fragment wordt direct daarna uit de
+// adresbalk/geschiedenis verwijderd (history.replaceState), zodat de sleutel niet nodeloos
+// zichtbaar blijft staan of per ongeluk nogmaals gedeeld wordt (bijv. via een gekopieerde URL).
+function handleIncomingShareLink() {
+  const hash = window.location.hash;
+  const match = hash.match(/^#share=(.+)$/);
+  if (!match) return;
+
+  const decoded = decodeShareConfig(match[1]);
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  if (!decoded || !decoded.provider) return;
+
+  // Tabblad Instellingen openen en velden voorvullen (nog NIET opslaan naar localStorage).
+  document.querySelector('.tab-btn[data-tab="settings"]').click();
+  providerSelect.value = decoded.provider;
+  providerSelect.dispatchEvent(new Event('change'));
+  if (decoded.endpoint) endpointInput.value = decoded.endpoint;
+  if (decoded.apiKey) apiKeyInput.value = decoded.apiKey;
+  if (decoded.model) modelInput.value = decoded.model;
+
+  const banner = document.createElement('div');
+  banner.className = 'share-banner';
+  banner.textContent = 'Instellingen ontvangen via een deel-link. Controleer ze hieronder en klik op "Opslaan" om ze op dit apparaat te bewaren.';
+  document.querySelector('#panel-settings .settings').prepend(banner);
+}
 
 /* ---------- Chat logic ---------- */
 /* ---------- Checklist: "wat is er al geprobeerd" ---------- */
@@ -1208,6 +1335,11 @@ endpointInput.value = aiConfig.endpoint || (aiConfig.provider === 'deepseek' ? D
 apiKeyInput.value = aiConfig.apiKey || '';
 modelInput.value = aiConfig.model || (aiConfig.provider === 'deepseek' ? DEFAULT_DEEPSEEK_MODEL : '');
 apiKeyHint.textContent = aiConfig.provider === 'claude-own-key' ? CLAUDE_OWN_KEY_HINT : GENERIC_KEY_HINT;
+
+// Ontvangen deel-link (indien aanwezig) verwerken -- vult het instellingenpaneel voor ter
+// controle, maar wijzigt bewust NIET de actieve aiConfig totdat de gebruiker zelf op "Opslaan"
+// klikt (zie handleIncomingShareLink hierboven voor de toelichting).
+handleIncomingShareLink();
 
 updateStatusLine();
 startWizard();
