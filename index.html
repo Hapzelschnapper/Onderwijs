@@ -454,7 +454,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.18</span>
+    <span class="version-badge">v1.19</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -502,7 +502,7 @@
         </div>
         <div class="field">
           <label for="apiKeyInput">API-sleutel</label>
-          <input type="password" id="apiKeyInput" placeholder="sk-...">
+          <input type="text" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
           <div class="hint" id="apiKeyHint">Wordt alleen client-side gebruikt en nergens naartoe verstuurd behalve naar het opgegeven endpoint. Deel dit bestand niet met je sleutel erin ingevuld.</div>
         </div>
         <div class="field">
@@ -819,6 +819,9 @@ function applyDecodedShareConfig(decoded, sourceLabel) {
   providerSelect.dispatchEvent(new Event('change'));
   if (decoded.endpoint) endpointInput.value = decoded.endpoint;
   if (decoded.apiKey) apiKeyInput.value = decoded.apiKey;
+  // Vangnet tegen eventuele asynchrone interferentie (bv. een wachtwoordmanager-extensie die het
+  // veld na het laden alsnog leegmaakt/overschrijft): waarde kort daarna nogmaals expliciet zetten.
+  if (decoded.apiKey) setTimeout(() => { if (!apiKeyInput.value) apiKeyInput.value = decoded.apiKey; }, 150);
   if (decoded.model) modelInput.value = decoded.model;
 
   const existingBanner = document.querySelector('#panel-settings .share-banner');
