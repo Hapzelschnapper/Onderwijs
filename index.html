@@ -523,7 +523,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.40</span>
+    <span class="version-badge">v1.41</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -589,12 +589,13 @@
 
       <div class="toggle-field">
         <label class="toggle-switch">
-          <input type="checkbox" id="andreafyToggle" checked>
+          <input type="checkbox" id="naamifyToggle" checked>
           <span class="toggle-slider"></span>
         </label>
-        <div>
-          <div class="toggle-field-label">Andreafy</div>
-          <div class="toggle-field-hint">Als dit aan staat, noemt de AI vaak de naam "Andrea" in haar antwoorden.</div>
+        <div style="flex:1;">
+          <div class="toggle-field-label">Naamify</div>
+          <div class="toggle-field-hint">Als dit aan staat én er een naam is ingevuld, noemt de AI die naam vaak in haar antwoorden.</div>
+          <input type="text" id="naamifyNameInput" value="Andrea" placeholder="Naam..." style="margin-top:8px; width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; background:#fff;">
         </div>
       </div>
 
@@ -652,16 +653,22 @@ let aiConfig = loadStoredAiConfig() || {
   model: DEFAULT_DEEPSEEK_MODEL
 };
 
-// "Andreafy"-voorkeur (zie Instellingen-tabblad): standaard AAN, tenzij de gebruiker 'm ooit
-// heeft uitgezet (dan onthouden via localStorage, net als de rest van de instellingen).
-const LS_ANDREAFY = "ondersteuningswizard_andreafy_v1";
-function loadAndreafyPref() {
+// "Naamify"-voorkeur (zie Instellingen-tabblad): standaard AAN met naam "Andrea", tenzij de
+// gebruiker dit ooit heeft aangepast (dan onthouden via localStorage, net als de rest van de
+// instellingen). Effectief actief is alleen: schuifje aan ÉN een niet-lege naam ingevuld.
+const LS_NAAMIFY = "ondersteuningswizard_naamify_v1";
+function loadNaamifyPref() {
   try {
-    const raw = localStorage.getItem(LS_ANDREAFY);
-    return raw === null ? true : raw === "true"; // standaard aan als er nog niets is opgeslagen
-  } catch (e) { return true; }
+    const raw = localStorage.getItem(LS_NAAMIFY);
+    if (raw === null) return { enabled: true, name: "Andrea" }; // standaard, nog niets opgeslagen
+    const parsed = JSON.parse(raw);
+    return {
+      enabled: typeof parsed.enabled === "boolean" ? parsed.enabled : true,
+      name: typeof parsed.name === "string" ? parsed.name : "Andrea",
+    };
+  } catch (e) { return { enabled: true, name: "Andrea" }; }
 }
-let andreafyEnabled = loadAndreafyPref();
+let naamifyPref = loadNaamifyPref();
 
 const SYSTEM_PROMPT = `Je bent een adviseur voor een professional van het Centrum voor Jeugd en Gezin (CJG) in Veenendaal. Je helpt met (1) bepalen welk ondersteuningsniveau uit de Wet passend onderwijs waarschijnlijk aansluit bij een casus (basisondersteuning/extra ondersteuning/gespecialiseerde ondersteuning) en (2) de concrete eerstvolgende stap in het beslis-/interventieproces: welke formele route, welk document of welke regeling daarbij hoort (OPP opstellen/aanpassen, afwijken onderwijstijd, TLV via Kindkans, expert via lokaal netwerk/Loket). Onderbouw dit met de specifieke regeling waar relevant.
 
@@ -1532,15 +1539,21 @@ function setInputEnabled(enabled) {
   sendBtn.disabled = !enabled;
 }
 
-// "Andreafy": optionele, door de gebruiker instelbare stijltoevoeging (zie Instellingen-tabblad).
+// "Naamify": optionele, door de gebruiker instelbare stijltoevoeging (zie Instellingen-tabblad).
 // Puur een extra instructie bovenop de normale SYSTEM_PROMPT, verandert niets aan de inhoudelijke
-// werkwijze/het ADVIES-format hierboven -- alleen de toon.
-const ANDREA_ADDENDUM = `
+// werkwijze/het ADVIES-format hierboven -- alleen de toon. Effectief actief is alleen: schuifje
+// aan ÉN een niet-lege naam ingevuld -- een leeg naamveld telt (ook bij een aanstaand schuifje)
+// als uit, er is dan immers geen naam om te gebruiken.
+function buildNaamifyAddendum(name) {
+  return `
 
-SPECIALE STIJLINSTRUCTIE ("Andreafy" staat aan in de instellingen): noem de naam "Andrea" vaak in elk antwoord -- meerdere keren per bericht, ook binnen dezelfde zin, op een natuurlijke maar opvallend frequente manier. Voorbeeld van de gewenste toon: "Andrea, bedankt voor de informatie Andrea. Laten we even kijken, Andrea, naar het juiste vervolg. Andrea, hoe lang bestaan deze problemen al Andrea?" Blijf voor de rest gewoon je normale taak uitvoeren (vragen stellen, ADVIES geven volgens de structuur hierboven, alle eerdere instructies) -- voeg alleen deze naam-herhaling toe aan je toon.`;
+SPECIALE STIJLINSTRUCTIE ("Naamify" staat aan in de instellingen, met naam "${name}"): noem de naam "${name}" vaak in elk antwoord -- meerdere keren per bericht, ook binnen dezelfde zin, op een natuurlijke maar opvallend frequente manier. Voorbeeld van de gewenste toon (met "Andrea" als voorbeeldnaam, vervang dat mentaal door "${name}"): "${name}, bedankt voor de informatie ${name}. Laten we even kijken, ${name}, naar het juiste vervolg. ${name}, hoe lang bestaan deze problemen al ${name}?" Blijf voor de rest gewoon je normale taak uitvoeren (vragen stellen, ADVIES geven volgens de structuur hierboven, alle eerdere instructies) -- voeg alleen deze naam-herhaling toe aan je toon.`;
+}
 
 function getEffectiveSystemPrompt() {
-  return andreafyEnabled ? SYSTEM_PROMPT + ANDREA_ADDENDUM : SYSTEM_PROMPT;
+  const name = (naamifyPref.name || "").trim();
+  const effectivelyEnabled = naamifyPref.enabled && name.length > 0;
+  return effectivelyEnabled ? SYSTEM_PROMPT + buildNaamifyAddendum(name) : SYSTEM_PROMPT;
 }
 
 async function callClaude(messages) {
@@ -1760,15 +1773,19 @@ apiKeyHint.textContent = aiConfig.provider === 'claude-own-key' ? CLAUDE_OWN_KEY
 // klikt (zie handleIncomingShareLink hierboven voor de toelichting).
 handleIncomingShareLink();
 
-// Andreafy-schuifje initialiseren op de opgeslagen/standaard voorkeur, en wijzigingen direct
-// opslaan (geen aparte "Opslaan"-klik nodig voor dit ene schuifje, dat past beter bij hoe een
-// toggle normaal gesproken werkt).
-const andreafyToggleEl = document.getElementById('andreafyToggle');
-andreafyToggleEl.checked = andreafyEnabled;
-andreafyToggleEl.addEventListener('change', () => {
-  andreafyEnabled = andreafyToggleEl.checked;
-  try { localStorage.setItem(LS_ANDREAFY, String(andreafyEnabled)); } catch (e) { /* geen probleem, blijft in-memory gelden voor deze sessie */ }
-});
+// Naamify-schuifje en naamveld initialiseren op de opgeslagen/standaard voorkeur, en wijzigingen
+// direct opslaan (geen aparte "Opslaan"-klik nodig, dat past beter bij hoe een schuifje/veld
+// normaal gesproken werkt).
+const naamifyToggleEl = document.getElementById('naamifyToggle');
+const naamifyNameInputEl = document.getElementById('naamifyNameInput');
+naamifyToggleEl.checked = naamifyPref.enabled;
+naamifyNameInputEl.value = naamifyPref.name;
+function saveNaamifyPref() {
+  naamifyPref = { enabled: naamifyToggleEl.checked, name: naamifyNameInputEl.value };
+  try { localStorage.setItem(LS_NAAMIFY, JSON.stringify(naamifyPref)); } catch (e) { /* geen probleem, blijft in-memory gelden voor deze sessie */ }
+}
+naamifyToggleEl.addEventListener('change', saveNaamifyPref);
+naamifyNameInputEl.addEventListener('input', saveNaamifyPref);
 
 updateStatusLine();
 startWizard();
