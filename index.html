@@ -404,6 +404,61 @@
     text-align: center;
     min-height: 16px;
   }
+  .toggle-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--border);
+    transition: .2s;
+    border-radius: 24px;
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    transition: .2s;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+  }
+  .toggle-switch input:checked + .toggle-slider {
+    background: var(--accent);
+  }
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+  }
+  .toggle-field-label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .toggle-field-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
   .share-section {
     margin-top: 20px;
     padding-top: 16px;
@@ -468,7 +523,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.38</span>
+    <span class="version-badge">v1.40</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -532,6 +587,17 @@
       </div>
       <div class="save-confirm" id="saveConfirm"></div>
 
+      <div class="toggle-field">
+        <label class="toggle-switch">
+          <input type="checkbox" id="andreafyToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <div>
+          <div class="toggle-field-label">Andreafy</div>
+          <div class="toggle-field-hint">Als dit aan staat, noemt de AI vaak de naam "Andrea" in haar antwoorden.</div>
+        </div>
+      </div>
+
       <div class="share-section">
         <label for="shareLinkOutput">Deel-link voor een collega (bevat de sleutel!)</label>
         <button id="generateShareLinkBtn">Genereer deel-link</button>
@@ -585,6 +651,17 @@ let aiConfig = loadStoredAiConfig() || {
   apiKey: "",
   model: DEFAULT_DEEPSEEK_MODEL
 };
+
+// "Andreafy"-voorkeur (zie Instellingen-tabblad): standaard AAN, tenzij de gebruiker 'm ooit
+// heeft uitgezet (dan onthouden via localStorage, net als de rest van de instellingen).
+const LS_ANDREAFY = "ondersteuningswizard_andreafy_v1";
+function loadAndreafyPref() {
+  try {
+    const raw = localStorage.getItem(LS_ANDREAFY);
+    return raw === null ? true : raw === "true"; // standaard aan als er nog niets is opgeslagen
+  } catch (e) { return true; }
+}
+let andreafyEnabled = loadAndreafyPref();
 
 const SYSTEM_PROMPT = `Je bent een adviseur voor een professional van het Centrum voor Jeugd en Gezin (CJG) in Veenendaal. Je helpt met (1) bepalen welk ondersteuningsniveau uit de Wet passend onderwijs waarschijnlijk aansluit bij een casus (basisondersteuning/extra ondersteuning/gespecialiseerde ondersteuning) en (2) de concrete eerstvolgende stap in het beslis-/interventieproces: welke formele route, welk document of welke regeling daarbij hoort (OPP opstellen/aanpassen, afwijken onderwijstijd, TLV via Kindkans, expert via lokaal netwerk/Loket). Onderbouw dit met de specifieke regeling waar relevant.
 
@@ -721,6 +798,7 @@ Werkwijze:
 - Eén korte, concrete vraag per beurt. Nooit meerdere tegelijk. Bouw voort op eerdere antwoorden; vraag door bij vaagheid.
 - Het eerste gebruikersbericht bevat al "Basisgegevens" (leeftijd, leerjaar/groep, Type school, evt. schoolnaam) en "Probleemdomein(en)" — via formulier uitgevraagd. Vraag hier NOOIT opnieuw naar; ga direct in op het/de opgegeven domein(en) (bijv. bij "gedrag": wat voor gedrag precies, in welke situaties; bij "leren": op welk vakgebied, wat voor soort achterstand).
 - "Type school" stuurt welk SWV/welke terminologie je overal gebruikt (regulier→SWV RGV-termen; reformatorisch→Berséba-termen; beide gebruiken Kindkans). Bij "weet ik niet zeker": vraag dit als EERSTE vervolgvraag, tenzij de schoolnaam het al verraadt.
+- Staat er in de Basisgegevens een regel "Samenwerkingsverband (automatisch herkend op schoolnaam): ...", gebruik DIE dan als vaststaand gegeven voor je hele advies (dit heeft voorrang boven "Type school" en boven eigen giswerk) — dit betekent specifiek een VO-casus bij SWV VO Gelderse Vallei of POBV; gebruik dan overal hún terminologie (Doorstart/Comma/Toewijzing bij Gelderse Vallei; CTP/arrangement/TLV bij POBV) in plaats van de PO-termen van SWV RGV/Berséba. Ontbreekt deze regel, val dan terug op "Type school" zoals hierboven.
 - Vraag verder naar: hoe de zorgen zich concreet uiten binnen het domein OP SCHOOL, duur/frequentie, wat school al probeerde + effect, bekende diagnostiek (niet zelf onderzoeken), veiligheid op school, impact op functioneren OP SCHOOL, en (dreigend) schoolverzuim/thuiszitten (bepaalt relevantie afwijken-onderwijstijd).
 - HARDE GRENS: geen zorgverlener/arts — GEEN klinische/medische/psychosociale intake. Nooit vragen naar oorzaken als scheiding/verhuizing/ingrijpende gebeurtenis/medische voorgeschiedenis als losstaand thema. Herformuleer altijd terug naar functioneren op school (bijv. niet "is er iets veranderd thuis?" maar "is dit patroon nieuw of speelt het al langer op school?"). Thuissituatie/jeugdhulp hooguit kort peilen (is er al betrokkenheid?), nooit als eigen exploratielijn.
 - SPECIALE VRAAGVORM "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER. HARDE OPMAAKEIS: antwoord moet LETTERLIJK beginnen met "INTERVENTIES:" + kort inleidend zinnetje, gevolgd op de volgende regel door "CATEGORIEEN:" + kommagescheiden lijst uit exact deze 7 namen (letterlijk overnemen): "Leren / didactisch", "Gedrag", "Sociaal-emotioneel", "Fysiek / medisch / zintuiglijk", "Overleg & samenwerking", "Diagnostiek", "Thuissituatie / jeugdhulp" — kies alleen de 2-4 relevante ("Overleg & samenwerking" bijna altijd). Voorbeeld:
@@ -975,6 +1053,39 @@ function handleIncomingShareLink() {
 }
 
 /* ---------- Chat logic ---------- */
+/* ---------- Chat logic ---------- */
+
+// Bekende scholen uit de bevestigde bronnenlijst (Berséba, SWV VO Gelderse Vallei, POBV) --
+// wordt gebruikt om het samenwerkingsverband direct uit de ingevulde schoolnaam af te leiden,
+// zodat de AI dit niet meer hoeft te vragen of te gokken. Matching is los or (deel van de naam,
+// hoofdletterongevoelig) zodat "clv", "Christelijk Lyceum Veenendaal" en "chr. lyceum" allemaal
+// raken. Vult bij geen match niets in -- de AI vraagt dan gewoon door zoals voorheen.
+const KNOWN_SCHOOLS = [
+  { match: ['aeres vmbo', 'aeres'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen' },
+  { match: ['het streek college', 'streek college'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen' },
+  { match: ['het streek lyceum', 'streek lyceum'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen' },
+  { match: ['marnix college', 'marnix'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen' },
+  { match: ['pallas athene'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen' },
+  { match: ['pantarijn'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen' },
+  { match: ['meza college', 'meza'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen (VSO)' },
+  { match: ['vester college', 'vester'], swv: 'SWV VO Gelderse Vallei', regio: 'Ede/Wageningen/Rhenen (VSO)' },
+  { match: ['jfc', 'johannes fontanus'], swv: 'POBV', regio: 'Barneveld-Veenendaal' },
+  { match: ['de meerwaarde', 'meerwaarde'], swv: 'POBV', regio: 'Barneveld-Veenendaal' },
+  { match: ['ichthus college', 'ichthus'], swv: 'POBV', regio: 'Barneveld-Veenendaal' },
+  { match: ['christelijk lyceum veenendaal', 'chr. lyceum veenendaal', 'clv'], swv: 'POBV', regio: 'Barneveld-Veenendaal' },
+  { match: ['het perron', 'perron'], swv: 'POBV', regio: 'Barneveld-Veenendaal' },
+  { match: ['rembrandt college', 'rembrandt'], swv: 'POBV', regio: 'Barneveld-Veenendaal' },
+  { match: ['blink veenendaal', 'blink'], swv: 'POBV', regio: 'Barneveld-Veenendaal (VSO)' },
+  { match: ['donnerschool'], swv: 'POBV', regio: 'Barneveld-Veenendaal' },
+];
+
+function detectSchoolSWV(schoolName) {
+  if (!schoolName) return null;
+  const normalized = schoolName.toLowerCase().trim();
+  if (normalized.length < 3) return null; // te kort om betrouwbaar te matchen
+  return KNOWN_SCHOOLS.find(entry => entry.match.some(m => normalized.includes(m))) || null;
+}
+
 /* ---------- Formulierstap 1: basisgegevens (leeftijd/leerjaar/school) ---------- */
 function showBasisgegevensForm() {
   const wrap = document.createElement('div');
@@ -1003,6 +1114,21 @@ function showBasisgegevensForm() {
   const leerjaarInput = addField('Leerjaar/groep', 'bijv. groep 5, of klas 2 VO', 'text');
   const schoolInput = addField('School (optioneel)', 'bijv. De Regenboog', 'text');
 
+  // Live herkenning: zodra de ingetypte schoolnaam een bekende school raakt, verschijnt hier
+  // meteen een bevestiging welk samenwerkingsverband erbij hoort.
+  const schoolDetectHint = document.createElement('div');
+  schoolDetectHint.className = 'checklist-hint';
+  schoolDetectHint.style.textAlign = 'left';
+  schoolDetectHint.style.color = 'var(--advies-border)';
+  schoolDetectHint.style.marginTop = '-6px';
+  wrap.appendChild(schoolDetectHint);
+  schoolInput.addEventListener('input', () => {
+    const detected = detectSchoolSWV(schoolInput.value);
+    schoolDetectHint.textContent = detected
+      ? '✓ Herkend als ' + detected.swv + '-school (' + detected.regio + ')'
+      : '';
+  });
+
   const schoolTypeWrap = document.createElement('div');
   schoolTypeWrap.className = 'checklist-other';
   const schoolTypeLabel = document.createElement('label');
@@ -1025,13 +1151,14 @@ function showBasisgegevensForm() {
 
   const hint = document.createElement('div');
   hint.className = 'checklist-hint';
-  hint.textContent = 'Leeftijd en leerjaar helpen voor een passend advies; school mag je leeg laten. Weet je het schooltype niet zeker, kies dan gerust "Weet ik niet zeker".';
+  hint.textContent = 'Leeftijd en leerjaar helpen voor een passend advies; school mag je leeg laten. Weet je het schooltype niet zeker, kies dan gerust "Weet ik niet zeker" -- bij een herkende VO-school hierboven is dat sowieso niet nodig.';
   wrap.appendChild(hint);
 
   submitBtn.addEventListener('click', () => {
     const leeftijd = leeftijdInput.value.trim();
     const leerjaar = leerjaarInput.value.trim();
     const school = schoolInput.value.trim();
+    const detected = detectSchoolSWV(school);
     const schoolTypeLabels = {
       onbekend: 'weet ik niet zeker',
       regulier: 'regulier (SWV Rijn & Gelderse Vallei)',
@@ -1043,6 +1170,7 @@ function showBasisgegevensForm() {
       'Type school: ' + schoolTypeLabels[schoolTypeSelect.value],
     ];
     if (school) parts.push('School: ' + school);
+    if (detected) parts.push('Samenwerkingsverband (automatisch herkend op schoolnaam): ' + detected.swv + ' (' + detected.regio + ')');
     const basisgegevensText = 'Basisgegevens — ' + parts.join('; ');
     wrap.remove();
     showDomainSelectForm(basisgegevensText);
@@ -1404,6 +1532,17 @@ function setInputEnabled(enabled) {
   sendBtn.disabled = !enabled;
 }
 
+// "Andreafy": optionele, door de gebruiker instelbare stijltoevoeging (zie Instellingen-tabblad).
+// Puur een extra instructie bovenop de normale SYSTEM_PROMPT, verandert niets aan de inhoudelijke
+// werkwijze/het ADVIES-format hierboven -- alleen de toon.
+const ANDREA_ADDENDUM = `
+
+SPECIALE STIJLINSTRUCTIE ("Andreafy" staat aan in de instellingen): noem de naam "Andrea" vaak in elk antwoord -- meerdere keren per bericht, ook binnen dezelfde zin, op een natuurlijke maar opvallend frequente manier. Voorbeeld van de gewenste toon: "Andrea, bedankt voor de informatie Andrea. Laten we even kijken, Andrea, naar het juiste vervolg. Andrea, hoe lang bestaan deze problemen al Andrea?" Blijf voor de rest gewoon je normale taak uitvoeren (vragen stellen, ADVIES geven volgens de structuur hierboven, alle eerdere instructies) -- voeg alleen deze naam-herhaling toe aan je toon.`;
+
+function getEffectiveSystemPrompt() {
+  return andreafyEnabled ? SYSTEM_PROMPT + ANDREA_ADDENDUM : SYSTEM_PROMPT;
+}
+
 async function callClaude(messages) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -1411,7 +1550,7 @@ async function callClaude(messages) {
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 1000,
-      system: SYSTEM_PROMPT,
+      system: getEffectiveSystemPrompt(),
       messages: messages
     })
   });
@@ -1440,7 +1579,7 @@ async function callClaudeOwnKey(messages) {
     body: JSON.stringify({
       model: aiConfig.model,
       max_tokens: 1000,
-      system: SYSTEM_PROMPT,
+      system: getEffectiveSystemPrompt(),
       messages: messages
     })
   });
@@ -1451,7 +1590,7 @@ async function callClaudeOwnKey(messages) {
 }
 
 async function callOpenAICompatible(messages) {
-  const openAiMessages = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
+  const openAiMessages = [{ role: "system", content: getEffectiveSystemPrompt() }, ...messages];
   const response = await fetch(aiConfig.endpoint, {
     method: "POST",
     headers: {
@@ -1620,6 +1759,16 @@ apiKeyHint.textContent = aiConfig.provider === 'claude-own-key' ? CLAUDE_OWN_KEY
 // controle, maar wijzigt bewust NIET de actieve aiConfig totdat de gebruiker zelf op "Opslaan"
 // klikt (zie handleIncomingShareLink hierboven voor de toelichting).
 handleIncomingShareLink();
+
+// Andreafy-schuifje initialiseren op de opgeslagen/standaard voorkeur, en wijzigingen direct
+// opslaan (geen aparte "Opslaan"-klik nodig voor dit ene schuifje, dat past beter bij hoe een
+// toggle normaal gesproken werkt).
+const andreafyToggleEl = document.getElementById('andreafyToggle');
+andreafyToggleEl.checked = andreafyEnabled;
+andreafyToggleEl.addEventListener('change', () => {
+  andreafyEnabled = andreafyToggleEl.checked;
+  try { localStorage.setItem(LS_ANDREAFY, String(andreafyEnabled)); } catch (e) { /* geen probleem, blijft in-memory gelden voor deze sessie */ }
+});
 
 updateStatusLine();
 startWizard();
