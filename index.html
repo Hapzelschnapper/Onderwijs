@@ -467,7 +467,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.28</span>
+    <span class="version-badge">v1.30</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -698,7 +698,8 @@ RBO (Regionaal Besturenoverleg Onderwijs): overlegstructuur op regionaal niveau 
 
 - Stel ALTIJD precies één korte, concrete vraag per beurt. Nooit meerdere vragen tegelijk.
 - Bouw voort op eerdere antwoorden; vraag door bij vage antwoorden.
-- Vraag onder andere naar: aard van de zorgen ZOALS DIE ZICH OP SCHOOL UITEN (leren/gedrag/sociaal-emotioneel/lichamelijk), duur en frequentie op school, wat de school al heeft geprobeerd en met welk effect, of er diagnostiek/vermoeden van een stoornis is (voor zover al bekend/gemeld, niet als eigen onderzoek), veiligheid op school, impact op het functioneren/de ontwikkeling OP SCHOOL, en of er sprake is van (dreigend) schoolverzuim of geheel/gedeeltelijk thuiszitten — dit laatste bepaalt of de afwijken-onderwijstijd-regeling relevant is voor je vervolgstap.
+- BELANGRIJK: het allereerste bericht dat je van de gebruiker krijgt bevat al de "Basisgegevens" (leeftijd, leerjaar/groep, evt. school) en het/de gekozen "Probleemdomein(en)" (leren/gedrag/sociaal-emotioneel/lichamelijk) — deze zijn al via een formulier uitgevraagd. Vraag hier dus NOOIT opnieuw naar. Ga direct door met gerichte vervolgvragen die specifiek inzoomen op het/de opgegeven domein(en) (bijv. bij "gedrag": wat voor gedrag precies, in welke situaties; bij "leren": op welk vakgebied, wat voor soort achterstand).
+- Vraag onder andere naar: hoe de zorgen zich concreet uiten binnen het/de opgegeven domein(en), ZOALS DIE ZICH OP SCHOOL UITEN, duur en frequentie op school, wat de school al heeft geprobeerd en met welk effect, of er diagnostiek/vermoeden van een stoornis is (voor zover al bekend/gemeld, niet als eigen onderzoek), veiligheid op school, impact op het functioneren/de ontwikkeling OP SCHOOL, en of er sprake is van (dreigend) schoolverzuim of geheel/gedeeltelijk thuiszitten — dit laatste bepaalt of de afwijken-onderwijstijd-regeling relevant is voor je vervolgstap.
 - HARDE GRENS: jij bent geen zorgverlener, arts of hulpverlener en voert GEEN klinische, medische of psychosociale intake uit. Stel NOOIT vragen die op een anamnese of gezinsonderzoek lijken — bijvoorbeeld niet vragen naar een mogelijke oorzaak zoals een scheiding, verhuizing, ingrijpende gebeurtenis, medische voorgeschiedenis, of andere levensgebeurtenissen als losstaand onderzoeksthema. Dat is niet jouw rol, en niet nodig om het ondersteuningsniveau te bepalen. Blijf bij elke vraag expliciet gericht op wat dit betekent voor het FUNCTIONEREN OP SCHOOL en de ONDERWIJSONDERSTEUNING die nodig is — niet op de onderliggende medische/psychologische oorzaak. Herformuleer een vraag die toch die kant opgaat direct terug naar de onderwijskundige impact (bijv. niet "is er recent iets veranderd in het gezin?" maar "merkt de school al langere tijd hetzelfde patroon, of is dit iets van de laatste tijd?").
 - Thuissituatie/jeugdhulp mag je hooguit kort en zijdelings noemen — alleen om te peilen of er al jeugdhulp/CJG-betrokkenheid is (relevant voor je latere vervolgstap-suggestie), nooit als eigen exploratielijn.
 - SPECIALE VRAAGVORM voor "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER per gesprek. Dit is een HARDE OPMAAKEIS, geen vrijblijvende suggestie: je antwoord moet in dat ene geval LETTERLIJK beginnen met "INTERVENTIES:" (precies dat woord, met dubbele punt, als allereerste tekens van je antwoord) gevolgd door alleen een kort inleidend zinnetje. Op de REGEL DAARNA voeg je ALTIJD toe: "CATEGORIEEN:" gevolgd door een kommagescheiden lijst van de categorieën die relevant zijn voor DEZE specifieke casus, gekozen uit EXACT deze 7 namen (kopieer ze letterlijk, geen eigen variaties): "Leren / didactisch", "Gedrag", "Sociaal-emotioneel", "Fysiek / medisch / zintuiglijk", "Overleg & samenwerking", "Diagnostiek", "Thuissituatie / jeugdhulp". Kies alleen categorieën die daadwerkelijk relevant zijn voor het probleem zoals beschreven (meestal 2-4 van de 7) — irrelevante categorieën laat je gewoon weg. Voorbeeld bij een casus over broekplassen op school: "Leren / didactisch" en "Diagnostiek" zijn dan meestal niet relevant, terwijl "Fysiek / medisch / zintuiglijk" en "Overleg & samenwerking" dat wel zijn. "Overleg & samenwerking" is bijna altijd relevant (gesprekken met ouders/school horen er meestal bij), tenzij je een harde reden hebt om die uit te sluiten. Volledig voorbeeld van een correct antwoord:
@@ -890,15 +891,6 @@ document.getElementById('generateShareLinkBtn').addEventListener('click', async 
     return;
   }
   const encoded = encodeShareConfig(shareConfig);
-  showOnScreenDebug([
-    'shareConfig bij genereren:',
-    'provider: ' + shareConfig.provider,
-    'endpoint: ' + shareConfig.endpoint,
-    'model: ' + shareConfig.model,
-    'apiKey lengte: ' + shareConfig.apiKey.length,
-    'apiKey preview: ' + shareConfig.apiKey.slice(0,4) + '...' + shareConfig.apiKey.slice(-4),
-    'encoded lengte: ' + encoded.length
-  ]);
   // Query-parameter (?share=...) i.p.v. een #-fragment: sommige chatapps (met name WhatsApp/
   // Instagram op iOS) knippen het deel na een # bij het automatisch herkennen van een link
   // stilzwijgend weg, een gewone queryparameter wordt overal als normaal onderdeel van de link
@@ -949,56 +941,136 @@ function applyDecodedShareConfig(decoded, sourceLabel) {
   return true;
 }
 
-function showOnScreenDebug(lines) {
-  const box = document.createElement('div');
-  box.style.cssText = 'background:#111;color:#0f0;font-family:monospace;font-size:11px;padding:10px;border-radius:8px;margin-bottom:14px;white-space:pre-wrap;word-break:break-all;';
-  box.textContent = '[DEEL-LINK DEBUG]\n' + lines.join('\n');
-  document.querySelector('#panel-settings .settings').prepend(box);
-}
-
 function handleIncomingShareLink() {
   const params = new URLSearchParams(window.location.search);
   const shareParam = params.get('share');
-  const debugLines = [];
-  debugLines.push('Volledige URL: ' + window.location.href);
-  debugLines.push('Search string: ' + (window.location.search || '(leeg)'));
-  debugLines.push('shareParam gevonden: ' + !!shareParam + (shareParam ? ' (lengte: ' + shareParam.length + ')' : ''));
-
-  if (!shareParam) {
-    debugLines.push('-> Geen share-parameter in de URL. Stopt hier.');
-    document.querySelector('.tab-btn[data-tab="settings"]').click();
-    showOnScreenDebug(debugLines);
-    return;
-  }
+  if (!shareParam) return; // geen deel-link: landingspagina blijft gewoon het Gesprek-tabblad
 
   const decoded = decodeShareConfig(shareParam);
-  if (decoded) {
-    debugLines.push('Decoderen: GELUKT');
-    debugLines.push('provider: ' + decoded.provider);
-    debugLines.push('endpoint: ' + decoded.endpoint);
-    debugLines.push('model: ' + decoded.model);
-    debugLines.push('apiKey aanwezig: ' + !!decoded.apiKey + ', lengte: ' + (decoded.apiKey ? decoded.apiKey.length : 0));
-    debugLines.push('apiKey preview: ' + (decoded.apiKey ? (decoded.apiKey.slice(0,4) + '...' + decoded.apiKey.slice(-4)) : '(leeg)'));
-  } else {
-    debugLines.push('Decoderen: MISLUKT (null)');
-  }
 
   // Parameter meteen uit de adresbalk/geschiedenis verwijderen, ongeacht of decoderen lukte --
   // zodat de sleutel niet nodeloos zichtbaar blijft staan.
   history.replaceState(null, '', window.location.pathname);
+  if (!decoded) return;
+
   applyDecodedShareConfig(decoded, 'een deel-link');
-
-  debugLines.push('apiKeyInput.value DIRECT na toepassen: ' + (apiKeyInput.value ? '(' + apiKeyInput.value.length + ' tekens)' : '(LEEG)'));
-
-  // Nogmaals checken na een korte vertraging, om te zien of iets (bv. Android's autofill-dienst)
-  // de waarde er ASYNCHROON weer uit haalt.
-  setTimeout(() => {
-    debugLines.push('apiKeyInput.value NA 500ms: ' + (apiKeyInput.value ? '(' + apiKeyInput.value.length + ' tekens)' : '(LEEG -- iets heeft het veld geleegd!)'));
-    showOnScreenDebug(debugLines);
-  }, 500);
 }
 
 /* ---------- Chat logic ---------- */
+/* ---------- Formulierstap 1: basisgegevens (leeftijd/leerjaar/school) ---------- */
+function showBasisgegevensForm() {
+  const wrap = document.createElement('div');
+  wrap.className = 'checklist-bubble';
+
+  const q = document.createElement('p');
+  q.className = 'checklist-question';
+  q.textContent = 'Eerst een paar basisgegevens over de leerling.';
+  wrap.appendChild(q);
+
+  function addField(labelText, placeholder, type) {
+    const fieldWrap = document.createElement('div');
+    fieldWrap.className = 'checklist-other';
+    const label = document.createElement('label');
+    label.textContent = labelText;
+    const input = document.createElement('input');
+    input.type = type || 'text';
+    input.placeholder = placeholder || '';
+    fieldWrap.appendChild(label);
+    fieldWrap.appendChild(input);
+    wrap.appendChild(fieldWrap);
+    return input;
+  }
+
+  const leeftijdInput = addField('Leeftijd', 'bijv. 8', 'number');
+  const leerjaarInput = addField('Leerjaar/groep', 'bijv. groep 5, of klas 2 VO', 'text');
+  const schoolInput = addField('School (optioneel)', 'bijv. De Regenboog', 'text');
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'checklist-submit';
+  submitBtn.type = 'button';
+  submitBtn.textContent = 'Volgende';
+  wrap.appendChild(submitBtn);
+
+  const hint = document.createElement('div');
+  hint.className = 'checklist-hint';
+  hint.textContent = 'Leeftijd en leerjaar helpen voor een passend advies; school mag je leeg laten.';
+  wrap.appendChild(hint);
+
+  submitBtn.addEventListener('click', () => {
+    const leeftijd = leeftijdInput.value.trim();
+    const leerjaar = leerjaarInput.value.trim();
+    const school = schoolInput.value.trim();
+    const parts = [
+      'Leeftijd: ' + (leeftijd || 'niet opgegeven'),
+      'Leerjaar/groep: ' + (leerjaar || 'niet opgegeven'),
+    ];
+    if (school) parts.push('School: ' + school);
+    const basisgegevensText = 'Basisgegevens — ' + parts.join('; ');
+    wrap.remove();
+    showDomainSelectForm(basisgegevensText);
+  });
+
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+/* ---------- Formulierstap 2: op welk(e) domein(en) spelen de problemen ---------- */
+const DOMAIN_OPTIONS = [
+  { key: 'leren', label: 'Leren (bijv. lezen, rekenen, taal, leerachterstand)' },
+  { key: 'gedrag', label: 'Gedrag (bijv. druk, opstandig, moeite met regels)' },
+  { key: 'sociaal-emotioneel', label: 'Sociaal-emotioneel (bijv. angst, verdriet, contact met leeftijdgenoten)' },
+  { key: 'lichamelijk', label: 'Lichamelijk (bijv. motoriek, gezondheid, zintuiglijk)' },
+];
+
+function showDomainSelectForm(basisgegevensText) {
+  const wrap = document.createElement('div');
+  wrap.className = 'checklist-bubble';
+
+  const q = document.createElement('p');
+  q.className = 'checklist-question';
+  q.textContent = 'Op welk(e) domein(en) spelen de problemen? Meerdere keuzes mogelijk.';
+  wrap.appendChild(q);
+
+  const checkboxRefs = [];
+  DOMAIN_OPTIONS.forEach(opt => {
+    const item = document.createElement('label');
+    item.className = 'checklist-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = opt.key;
+    const txt = document.createElement('span');
+    txt.textContent = opt.label;
+    item.appendChild(cb);
+    item.appendChild(txt);
+    wrap.appendChild(item);
+    checkboxRefs.push({ cb, label: opt.label });
+  });
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'checklist-submit';
+  submitBtn.type = 'button';
+  submitBtn.textContent = 'Start het gesprek';
+  wrap.appendChild(submitBtn);
+
+  const hint = document.createElement('div');
+  hint.className = 'checklist-hint';
+  hint.textContent = 'Kies minimaal één domein.';
+  wrap.appendChild(hint);
+
+  submitBtn.addEventListener('click', () => {
+    const selected = checkboxRefs.filter(r => r.cb.checked).map(r => r.label);
+    if (!selected.length) return; // minimaal één domein vereist
+    wrap.remove();
+    const combined = basisgegevensText
+      + '\nProbleemdomein(en): ' + selected.join(', ')
+      + '\n\nStel me nu gerichte vervolgvragen, één voor één, om tot een advies te komen over het juiste ondersteuningsniveau.';
+    sendTurn(combined);
+  });
+
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
 /* ---------- Checklist: "wat is er al geprobeerd" ---------- */
 const INTERVENTION_GROUPS = [
   {
@@ -1006,13 +1078,9 @@ const INTERVENTION_GROUPS = [
     items: [
       "Verlengde of extra instructie (individueel of in een klein groepje)",
       "Differentiatie in tempo, niveau of hoeveelheid stof",
-      "Herhaalde uitleg met andere didactische aanpak/materiaal",
       "Remedial teaching (RT), intern of extern",
       "Compenserende of dispenserende voorzieningen (bijv. extra tijd, aangepast toetswerk)",
       "Inzet van hulpmiddelen (audio, vergrotingen, kleurenoverlays, spellingsoftware)",
-      "Aangepast huiswerk of huiswerkbegeleiding",
-      "Pre-teaching (stof vooraf al even doornemen)",
-      "Coöperatief leren / peer tutoring (samenwerken met een medeleerling)",
     ],
   },
   {
@@ -1020,11 +1088,8 @@ const INTERVENTION_GROUPS = [
     items: [
       "Individueel gedragsplan of -contract",
       "Beloningssysteem (bijv. puntensysteem, stickerkaart)",
-      "Time-outafspraken of een rustplek in de klas",
       "Vaste, voorspelbare structuur/dagritme aangeboden",
-      "Vooraf besproken gedragsverwachtingen bij overgangsmomenten",
       "Inzet van een gedragsspecialist of ambulant begeleider",
-      "Functieanalyse van het gedrag (wat lokt het uit, wat houdt het in stand)",
     ],
   },
   {
@@ -1032,10 +1097,7 @@ const INTERVENTION_GROUPS = [
     items: [
       "Sociale-vaardigheidstraining (individueel of groepsgewijs)",
       "Faalangstreductietraining",
-      "Weerbaarheidstraining",
       "Gesprekken met een schoolmaatschappelijk werker",
-      "Maatjesproject / buddysysteem",
-      "Kringgesprekken over het onderwerp in de klas",
       "Inzet van een vertrouwenspersoon",
     ],
   },
@@ -1043,42 +1105,31 @@ const INTERVENTION_GROUPS = [
     category: "Fysiek / medisch / zintuiglijk",
     items: [
       "Aangepaste zit- of werkplek",
-      "Bewegingsmomenten ingepland (bijv. extra pauzes, bewegend leren)",
       "Fysiotherapie of motorische remedial teaching",
-      "Logopedie",
       "Aanpassing i.v.m. gehoor/zicht (bijv. FM-systeem, aangepast lettertype)",
-      "Medicatieafspraken/-toezicht in overleg met ouders",
     ],
   },
   {
     category: "Overleg & samenwerking",
     items: [
-      "Gesprek(ken) met de leerling zelf",
       "Gesprek(ken) met ouders/verzorgers",
-      "Warme overdracht vanuit een vorige school/voorschoolse voorziening geraadpleegd",
       "Besproken in het (interne) ondersteuningsteam",
       "Interne deskundige (orthopedagoog/psycholoog) laten meedenken",
       "Externe deskundige/expert ingezet (bijv. via het samenwerkingsverband)",
-      "Multidisciplinair overleg (bijv. met jeugdhulp, huisarts, CJG)",
-      "Observatie door een collega of specialist in de klas",
     ],
   },
   {
     category: "Diagnostiek",
     items: [
       "Screening op dyslexie/dyscalculie",
-      "Onderzoek naar (hoog)begaafdheid",
       "Psychologisch of orthopedagogisch onderzoek",
-      "Signaleringsinstrument ingevuld (bijv. vragenlijst voor leerkracht/ouders)",
     ],
   },
   {
     category: "Thuissituatie / jeugdhulp",
     items: [
-      "Opvoedondersteuning ingezet",
       "Gezinswerker of jeugdhulpverlening betrokken",
       "Schoolmaatschappelijk werk ingeschakeld",
-      "Casus besproken in een lokaal (wijk)team",
     ],
   },
 ];
@@ -1511,7 +1562,7 @@ function startWizard() {
   updateProgress();
   setInputEnabled(false);
   inputEl.placeholder = "Typ je antwoord...";
-  sendTurn("Ik wil hulp bij het bepalen van het juiste ondersteuningsniveau voor een casus. Stel me alsjeblieft vragen, één voor één.");
+  showBasisgegevensForm();
 }
 
 restartBtn.addEventListener('click', startWizard);
