@@ -209,6 +209,15 @@
   .abbr-tooltip strong {
     color: var(--accent-soft);
   }
+  .basisgegevens-warning {
+    background: #fdf2ec;
+    border: 1px solid #e0a876;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin: 10px 0;
+    color: #7a4a1f;
+  }
   .checklist-bubble {
     align-self: stretch;
     max-width: 100%;
@@ -566,7 +575,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.48</span>
+    <span class="version-badge">v1.49</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -1222,6 +1231,16 @@ function showBasisgegevensForm() {
     const leeftijd = leeftijdInput.value.trim();
     const leerjaar = leerjaarInput.value.trim();
     const school = schoolInput.value.trim();
+    const warnings = validateBasisgegevens(leeftijd, leerjaar);
+
+    if (warnings.length && !wrap.dataset.warningConfirmed) {
+      showBasisgegevensWarning(wrap, warnings, () => {
+        wrap.dataset.warningConfirmed = 'true';
+        submitBtn.click(); // opnieuw proberen, nu met de bevestiging gezet zodat de waarschuwing niet nogmaals verschijnt
+      });
+      return;
+    }
+
     const detected = detectSchoolSWV(school);
     const schoolTypeLabels = {
       onbekend: 'weet ik niet zeker',
@@ -1243,6 +1262,98 @@ function showBasisgegevensForm() {
 
   chatEl.appendChild(wrap);
   chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+// Controleert leeftijd/leerjaar op onwaarschijnlijke waarden (bijv. een leeftijd van 1 jaar, of
+// "groep 0" dat niet bestaat in het Nederlandse basisonderwijs) -- geeft een lijst leesbare
+// waarschuwingen terug, leeg als alles er plausibel uitziet. Bewust ruime marges (geen harde
+// blokkade): een uitzonderlijke maar legitieme casus moet altijd nog mogelijk blijven, de
+// gebruiker krijgt alleen eerst een moment om het te bevestigen of te corrigeren.
+function validateBasisgegevens(leeftijdStr, leerjaarStr) {
+  const warnings = [];
+  const leeftijd = parseInt(leeftijdStr, 10);
+
+  if (leeftijdStr && !isNaN(leeftijd)) {
+    if (leeftijd < 3) {
+      warnings.push('Leeftijd ' + leeftijd + ' jaar is ongebruikelijk jong voor een schoolcasus (kleuters starten meestal rond hun 4e).');
+    } else if (leeftijd > 19) {
+      warnings.push('Leeftijd ' + leeftijd + ' jaar is ongebruikelijk oud voor een PO/VO-casus.');
+    }
+  }
+
+  const groepMatch = leerjaarStr.match(/groep\s*(\d+)/i);
+  if (groepMatch) {
+    const groep = parseInt(groepMatch[1], 10);
+    if (groep < 1 || groep > 8) {
+      warnings.push('"Groep ' + groep + '" bestaat niet in het basisonderwijs -- de groepen lopen van groep 1 t/m 8.');
+    }
+  }
+
+  const klasMatch = leerjaarStr.match(/klas\s*(\d+)/i);
+  if (klasMatch) {
+    const klas = parseInt(klasMatch[1], 10);
+    if (klas < 1 || klas > 6) {
+      warnings.push('"Klas ' + klas + '" is ongebruikelijk voor voortgezet onderwijs (meestal klas 1 t/m 6).');
+    }
+  }
+
+  // Grove leeftijd-versus-groep-controle, met ruime marge (3 jaar) om alleen echt afwijkende
+  // combinaties te signaleren, niet elke kleine normale variatie (bv. een keer blijven zitten).
+  if (groepMatch && leeftijdStr && !isNaN(leeftijd)) {
+    const groep = parseInt(groepMatch[1], 10);
+    if (groep >= 1 && groep <= 8) {
+      const verwachteLeeftijd = groep + 5; // groep 1 ~ 6 jr, groep 8 ~ 13 jr (ruime vuistregel)
+      if (Math.abs(leeftijd - verwachteLeeftijd) > 3) {
+        warnings.push('Leeftijd ' + leeftijd + ' jaar in combinatie met groep ' + groep + ' is een ongebruikelijke combinatie.');
+      }
+    }
+  }
+
+  return warnings;
+}
+
+function showBasisgegevensWarning(wrap, warnings, onConfirm) {
+  const existing = wrap.querySelector('.basisgegevens-warning');
+  if (existing) existing.remove();
+
+  const warningBox = document.createElement('div');
+  warningBox.className = 'basisgegevens-warning';
+  const title = document.createElement('div');
+  title.style.fontWeight = '700';
+  title.style.marginBottom = '4px';
+  title.textContent = 'Even controleren:';
+  warningBox.appendChild(title);
+  const list = document.createElement('ul');
+  list.style.margin = '0 0 8px';
+  list.style.paddingLeft = '18px';
+  warnings.forEach(w => {
+    const li = document.createElement('li');
+    li.textContent = w;
+    list.appendChild(li);
+  });
+  warningBox.appendChild(list);
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'checklist-submit';
+  confirmBtn.style.background = '#fff';
+  confirmBtn.style.color = 'var(--accent)';
+  confirmBtn.style.border = '1px solid var(--accent)';
+  confirmBtn.textContent = 'Klopt, toch doorgaan';
+  confirmBtn.addEventListener('click', onConfirm);
+  warningBox.appendChild(confirmBtn);
+
+  const correctHint = document.createElement('div');
+  correctHint.style.fontSize = '12px';
+  correctHint.style.marginTop = '6px';
+  correctHint.style.color = 'var(--muted)';
+  correctHint.textContent = 'Of pas de velden hierboven aan en klik nogmaals op "Volgende".';
+  warningBox.appendChild(correctHint);
+
+  // Direct onder de velden invoegen (vóór de "Volgende"-knop), zodat het meteen opvalt.
+  const submitButtonEl = wrap.querySelector('.checklist-submit');
+  wrap.insertBefore(warningBox, submitButtonEl);
+  warningBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 /* ---------- Formulierstap 2: op welk(e) domein(en) spelen de problemen ---------- */
