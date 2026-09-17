@@ -544,7 +544,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.42</span>
+    <span class="version-badge">v1.43</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -837,7 +837,7 @@ Geen losse opsomming toevoegen (de app toont zelf een aanvinkbare lijst). Vergee
 - Het advies begin je altijd met de regel "ADVIES:" gevolgd door:
   1. Het meest waarschijnlijke niveau
   2. Een korte onderbouwing (2-4 zinnen)
-  3. Een OBJECTIVERINGSTABEL: een markdown-tabel die per relevant, TOETSBAAR criterium uit de documentatie hierboven (de "wat valt niet onder basisondersteuning"-grenzen per dimensie, de legitimerende-voorbeelden-lijsten per overstap, en bij een mogelijke S(B)O-plaatsing ook de Bijlage D-criteria) aangeeft of het bij DEZE casus wel of niet van toepassing is, met een korte, feitelijke toelichting gebaseerd op wat er in het gesprek is verteld. Doel: een objectief, herleidbaar overzicht dat bruikbaar is in een gesprek met bijvoorbeeld een ouder of een IB'er — dus GEEN eigen interpretatie of vermoeden, alleen wat uit de antwoorden van de gebruiker blijkt. Kies 3-6 criteria die het meest relevant zijn voor de vastgestelde niveau-grens (niet uitputtend alles opsommen). Formaat (exact zo, met | als scheidingsteken, inclusief de koppen-scheidingsregel):
+  3. Een OBJECTIVERINGSTABEL: een markdown-tabel die per relevant, TOETSBAAR criterium uit de documentatie hierboven (de "wat valt niet onder basisondersteuning"-grenzen per dimensie, de legitimerende-voorbeelden-lijsten per overstap, en bij een mogelijke S(B)O-plaatsing ook de Bijlage D-criteria) aangeeft of het bij DEZE casus wel of niet van toepassing is, met een korte, feitelijke toelichting gebaseerd op wat er in het gesprek is verteld. Doel: een objectief, herleidbaar overzicht dat bruikbaar is in een gesprek met bijvoorbeeld een ouder of een IB'er — dus GEEN eigen interpretatie of vermoeden, alleen wat uit de antwoorden van de gebruiker blijkt. Kies 3-6 criteria die het meest relevant zijn voor de vastgestelde niveau-grens (niet uitputtend alles opsommen). HOU DE TABEL BEKNOPT: "Criterium" max. ~8 woorden, "Toelichting" max. ~15 woorden per cel — dit is een scanbaar overzicht, geen lopende tekst. Formaat (exact zo, met | als scheidingsteken, inclusief de koppen-scheidingsregel):
 | Criterium | Van toepassing? | Toelichting |
 |---|---|---|
 | [kort, concreet criterium uit de documentatie] | Ja / Nee / Onduidelijk | [feitelijke, korte onderbouwing] |
@@ -1627,7 +1627,7 @@ async function callClaude(messages) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 1000,
+      max_tokens: 2000, // was 1000 -- de objectiveringstabel in het ADVIES paste daar soms niet meer in
       system: getEffectiveSystemPrompt(),
       messages: messages
     })
@@ -1656,7 +1656,7 @@ async function callClaudeOwnKey(messages) {
     },
     body: JSON.stringify({
       model: aiConfig.model,
-      max_tokens: 1000,
+      max_tokens: 2000, // was 1000 -- de objectiveringstabel in het ADVIES paste daar soms niet meer in
       system: getEffectiveSystemPrompt(),
       messages: messages
     })
@@ -1677,7 +1677,7 @@ async function callOpenAICompatible(messages) {
     },
     body: JSON.stringify({
       model: aiConfig.model,
-      max_tokens: 1000,
+      max_tokens: 2000, // was 1000 -- de objectiveringstabel in het ADVIES paste daar soms niet meer in
       messages: openAiMessages
     })
   });
