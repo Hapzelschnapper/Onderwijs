@@ -544,7 +544,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.46</span>
+    <span class="version-badge">v1.47</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -829,10 +829,7 @@ Werkwijze:
 - HARDE REGEL — NOOIT ZELF RADEN OP DE SCHOOLNAAM: staat "Type school" op "weet ik niet zeker" (geen "automatisch herkend"-vermelding), dan MAG JIJ NOOIT ZELF afleiden of een school regulier/reformatorisch is, of bij welk SWV die hoort, puur op basis van hoe de naam klinkt (bijv. een historische, Bijbelse of protestants klinkende naam betekent NIET automatisch reformatorisch — veel gewone christelijke/openbare scholen heten ook zo). Alleen de expliciete "(automatisch herkend op schoolnaam)"-vermelding van de app telt als bevestigd; alles daarbuiten is voor jou onbekend, ook al lijkt de naam een aanwijzing te geven. Vraag in dat geval het schooltype gewoon als vervolgvraag (bijv. "Is [school] een reguliere of een reformatorische school?" of "Valt de school in Ede/Wageningen/Rhenen of in Veenendaal/Barneveld?") — dat is geen omweg, dat voorkomt een fout advies.
 - Vraag verder naar: hoe de zorgen zich concreet uiten binnen het domein OP SCHOOL, duur/frequentie, wat school al probeerde + effect, bekende diagnostiek (niet zelf onderzoeken), veiligheid op school, impact op functioneren OP SCHOOL, en (dreigend) schoolverzuim/thuiszitten (bepaalt relevantie afwijken-onderwijstijd).
 - HARDE GRENS: geen zorgverlener/arts — GEEN klinische/medische/psychosociale intake. Nooit vragen naar oorzaken als scheiding/verhuizing/ingrijpende gebeurtenis/medische voorgeschiedenis als losstaand thema. Herformuleer altijd terug naar functioneren op school (bijv. niet "is er iets veranderd thuis?" maar "is dit patroon nieuw of speelt het al langer op school?"). Thuissituatie/jeugdhulp hooguit kort peilen (is er al betrokkenheid?), nooit als eigen exploratielijn.
-- SPECIALE VRAAGVORM "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER. HARDE OPMAAKEIS: antwoord moet LETTERLIJK beginnen met "INTERVENTIES:" + kort inleidend zinnetje, gevolgd op de volgende regel door "CATEGORIEEN:" + kommagescheiden lijst uit exact deze 7 namen (letterlijk overnemen): "Leren / didactisch", "Gedrag", "Sociaal-emotioneel", "Fysiek / medisch / zintuiglijk", "Overleg & samenwerking", "Diagnostiek", "Thuissituatie / jeugdhulp" — kies alleen de 2-4 relevante ("Overleg & samenwerking" bijna altijd). Voorbeeld:
-"INTERVENTIES: Wat heeft de school tot nu toe al geprobeerd?
-CATEGORIEEN: Fysiek / medisch / zintuiglijk, Sociaal-emotioneel, Overleg & samenwerking"
-Geen losse opsomming toevoegen (de app toont zelf een aanvinkbare lijst). Vergeet deze twee regels nooit. Het antwoord dat volgt is een samengestelde lijst van de gebruiker — behandel als gewoon antwoord.
+- SPECIALE VRAAGVORM "wat is er al geprobeerd": stel deze vraag PRECIES ÉÉN KEER. HARDE OPMAAKEIS: antwoord moet LETTERLIJK beginnen met "INTERVENTIES:" + kort inleidend zinnetje, verder niets. Voorbeeld: "INTERVENTIES: Wat heeft de school tot nu toe al geprobeerd?" Geen losse opsomming toevoegen (de app toont zelf een vaste, aanvinkbare top-10-lijst plus een "Anders, namelijk"-veld voor eventuele overige interventies). Vergeet deze marker nooit. Het antwoord dat volgt is een samengestelde lijst van de gebruiker — behandel als gewoon antwoord.
 - Geen vast aantal vragen: ga door tot een duidelijke koers ontstaat (INTERVENTIES-vraag telt mee als 1). Dwing nooit een ADVIES af bij nog relevante onzekerheid. Kan bij een heldere casus al na 3-4 vragen zijn, bij complexe casussen 8-10. Vangnet: voorbij ~12 vragen zonder duidelijke koers, geef alsnog een voorlopig ADVIES met benoemde resterende onzekerheid.
 - Het advies begin je altijd met de regel "ADVIES:" gevolgd door:
   1. Het meest waarschijnlijke niveau
@@ -1284,69 +1281,21 @@ function showDomainSelectForm(basisgegevensText) {
 }
 
 /* ---------- Checklist: "wat is er al geprobeerd" ---------- */
-const INTERVENTION_GROUPS = [
-  {
-    category: "Leren / didactisch",
-    items: [
-      "Verlengde of extra instructie (individueel of in een klein groepje)",
-      "Differentiatie in tempo, niveau of hoeveelheid stof",
-      "Remedial teaching (RT), intern of extern",
-      "Compenserende of dispenserende voorzieningen (bijv. extra tijd, aangepast toetswerk)",
-      "Inzet van hulpmiddelen (audio, vergrotingen, kleurenoverlays, spellingsoftware)",
-    ],
-  },
-  {
-    category: "Gedrag",
-    items: [
-      "Individueel gedragsplan of -contract",
-      "Beloningssysteem (bijv. puntensysteem, stickerkaart)",
-      "Vaste, voorspelbare structuur/dagritme aangeboden",
-      "Inzet van een gedragsspecialist of ambulant begeleider",
-    ],
-  },
-  {
-    category: "Sociaal-emotioneel",
-    items: [
-      "Sociale-vaardigheidstraining (individueel of groepsgewijs)",
-      "Faalangstreductietraining",
-      "Gesprekken met een schoolmaatschappelijk werker",
-      "Inzet van een vertrouwenspersoon",
-    ],
-  },
-  {
-    category: "Fysiek / medisch / zintuiglijk",
-    items: [
-      "Aangepaste zit- of werkplek",
-      "Fysiotherapie of motorische remedial teaching",
-      "Aanpassing i.v.m. gehoor/zicht (bijv. FM-systeem, aangepast lettertype)",
-    ],
-  },
-  {
-    category: "Overleg & samenwerking",
-    items: [
-      "Gesprek(ken) met ouders/verzorgers",
-      "Besproken in het (interne) ondersteuningsteam",
-      "Interne deskundige (orthopedagoog/psycholoog) laten meedenken",
-      "Externe deskundige/expert ingezet (bijv. via het samenwerkingsverband)",
-    ],
-  },
-  {
-    category: "Diagnostiek",
-    items: [
-      "Screening op dyslexie/dyscalculie",
-      "Psychologisch of orthopedagogisch onderzoek",
-    ],
-  },
-  {
-    category: "Thuissituatie / jeugdhulp",
-    items: [
-      "Gezinswerker of jeugdhulpverlening betrokken",
-      "Schoolmaatschappelijk werk ingeschakeld",
-    ],
-  },
+// Platte top-10 van meest voorkomende interventies (ongerubriceerd -- geen categorieën meer).
+const INTERVENTION_OPTIONS = [
+  "Gesprek(ken) met ouders/verzorgers",
+  "Extra instructie / individuele begeleiding in de klas",
+  "Differentiatie in tempo of niveau van de lesstof",
+  "Individueel gedragsplan of -contract",
+  "Besproken in het (interne) ondersteuningsteam",
+  "Interne deskundige (orthopedagoog/psycholoog) laten meedenken",
+  "Sociale-vaardigheidstraining",
+  "Aangepaste zit- of werkplek",
+  "Externe deskundige/expert ingezet (bijv. via het samenwerkingsverband)",
+  "Remedial teaching (RT), intern of extern",
 ];
 
-function showChecklistBubble(introText, categoryFilter) {
+function showChecklistBubble(introText) {
   const wrap = document.createElement('div');
   wrap.className = 'checklist-bubble';
 
@@ -1355,73 +1304,41 @@ function showChecklistBubble(introText, categoryFilter) {
   q.innerHTML = renderFormattedContent(introText || "Wat heeft de school tot nu toe al geprobeerd?");
   wrap.appendChild(q);
 
-  // Filter op de door de AI opgegeven categorieën (case-insensitief vergeleken met de vaste
-  // categorienamen hierboven). Geen filter opgegeven, of geen enkele match (bv. AI gaf een
-  // onherkenbare/verzonnen categorienaam) -> veilig terugvallen op de VOLLEDIGE lijst, zodat er
-  // nooit relevante opties onbedoeld verdwijnen door een parseer- of matchfout.
-  let groupsToShow = INTERVENTION_GROUPS;
-  let filtered = false;
-  if (Array.isArray(categoryFilter) && categoryFilter.length) {
-    const matches = INTERVENTION_GROUPS.filter(g => categoryFilter.includes(g.category.toLowerCase()));
-    if (matches.length) { groupsToShow = matches; filtered = true; }
-  }
-
-  if (filtered) {
-    const filterNote = document.createElement('div');
-    filterNote.className = 'checklist-hint';
-    filterNote.style.marginBottom = '8px';
-    filterNote.style.textAlign = 'left';
-    filterNote.textContent = 'Deze lijst is toegespitst op de besproken casus. Mis je iets? Vul het in bij "Anders, namelijk" hieronder.';
-    wrap.appendChild(filterNote);
-  }
-
   const itemsContainer = document.createElement('div');
   itemsContainer.className = 'checklist-items-scroll';
   wrap.appendChild(itemsContainer);
 
-  // checkboxRefs houdt {cb, label, number} bij, doorlopend genummerd over de GETOONDE groepen heen
-  // (niet over alle 7, als er gefilterd is) -- zodat de nummers die in het samengevatte antwoord
-  // terugkomen consistent en uniek blijven, ongeacht bij welke categorie een item hoort.
   const checkboxRefs = [];
-  let runningNumber = 1;
+  INTERVENTION_OPTIONS.forEach((label, idx) => {
+    const item = document.createElement('label');
+    item.className = 'checklist-item';
 
-  groupsToShow.forEach(group => {
-    const heading = document.createElement('div');
-    heading.className = 'checklist-group-heading';
-    heading.textContent = group.category;
-    itemsContainer.appendChild(heading);
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = label;
 
-    group.items.forEach(label => {
-      const item = document.createElement('label');
-      item.className = 'checklist-item';
+    const num = document.createElement('span');
+    num.className = 'num';
+    num.textContent = (idx + 1) + '.';
 
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = label;
+    const txt = document.createElement('span');
+    txt.textContent = label;
 
-      const num = document.createElement('span');
-      num.className = 'num';
-      num.textContent = runningNumber + '.';
-
-      const txt = document.createElement('span');
-      txt.textContent = label;
-
-      item.appendChild(cb);
-      item.appendChild(num);
-      item.appendChild(txt);
-      itemsContainer.appendChild(item);
-      checkboxRefs.push({ cb, label, number: runningNumber });
-      runningNumber++;
-    });
+    item.appendChild(cb);
+    item.appendChild(num);
+    item.appendChild(txt);
+    itemsContainer.appendChild(item);
+    checkboxRefs.push({ cb, label, number: idx + 1 });
   });
 
   const otherWrap = document.createElement('div');
   otherWrap.className = 'checklist-other';
   const otherLabel = document.createElement('label');
-  otherLabel.textContent = 'Anders, namelijk (optioneel):';
-  const otherInput = document.createElement('input');
-  otherInput.type = 'text';
-  otherInput.placeholder = 'bijv. extra rustmomenten ingepland';
+  otherLabel.textContent = 'Anders, namelijk (optioneel — meerdere items mogen, gescheiden door een komma of puntkomma):';
+  const otherInput = document.createElement('textarea');
+  otherInput.rows = 2;
+  otherInput.style.cssText = 'width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; background:#fff; resize:vertical;';
+  otherInput.placeholder = 'bijv. extra rustmomenten ingepland, warme overdracht met vorige school';
   otherWrap.appendChild(otherLabel);
   otherWrap.appendChild(otherInput);
   wrap.appendChild(otherWrap);
@@ -1434,7 +1351,7 @@ function showChecklistBubble(introText, categoryFilter) {
 
   const hint = document.createElement('div');
   hint.className = 'checklist-hint';
-  hint.textContent = 'Meerdere opties aanvinken mag, uit elke categorie.';
+  hint.textContent = 'Meerdere opties aanvinken mag.';
   wrap.appendChild(hint);
 
   submitBtn.addEventListener('click', () => {
@@ -1752,28 +1669,20 @@ async function sendTurn(userText) {
       inputEl.placeholder = "Klik op 'Nieuwe casus starten' om opnieuw te beginnen";
     } else if (/^INTERVENTIES:/i.test(reply.trim())) {
       const trimmedReply = reply.trim();
-      // Introtekst = alleen de eerste regel (na de marker), niet de eventuele CATEGORIEEN-regel erna.
-      const introMatch = trimmedReply.match(/^INTERVENTIES:\s*(.*?)(?:\n|$)/i);
-      const introText = introMatch ? introMatch[1].trim() : '';
-      // CATEGORIEEN-regel is optioneel herkend -- ontbreekt hij of is de inhoud onherkenbaar, dan
-      // valt showChecklistBubble vanzelf terug op de volledige, ongefilterde lijst (zie daar).
-      const catMatch = trimmedReply.match(/CATEGORIEEN:\s*(.+)$/im);
-      const categoryFilter = catMatch
-        ? catMatch[1].split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
-        : null;
+      const introText = trimmedReply.replace(/^INTERVENTIES:\s*/i, '');
       interventionsAsked = true;
       questionCount++;
       updateProgress();
-      showChecklistBubble(introText, categoryFilter);
+      showChecklistBubble(introText);
       setInputEnabled(false); // gewone tekstveld pauzeren -- de checklist regelt hier het antwoord
       inputEl.placeholder = "Beantwoord eerst de checklist hierboven...";
     } else if (!interventionsAsked && INTERVENTIONS_FALLBACK_PATTERN.test(reply.trim())) {
-      // Vangnet: AI vergat de marker (en dus ook de categorieënfilter) -- toon de volledige,
-      // ongefilterde checklist, met de eigen vraagtekst van de AI als inleiding.
+      // Vangnet: AI vergat de marker -- toon de checklist alsnog, met de eigen vraagtekst van de AI
+      // als inleiding.
       interventionsAsked = true;
       questionCount++;
       updateProgress();
-      showChecklistBubble(reply.trim(), null);
+      showChecklistBubble(reply.trim());
       setInputEnabled(false);
       inputEl.placeholder = "Beantwoord eerst de checklist hierboven...";
     } else {
