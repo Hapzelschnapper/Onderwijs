@@ -166,6 +166,27 @@
   .bubble li {
     margin-bottom: 3px;
   }
+  .table-scroll {
+    overflow-x: auto;
+    margin: 8px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-scroll table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+  }
+  .table-scroll th, .table-scroll td {
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .table-scroll th {
+    background: var(--accent-soft);
+    font-weight: 700;
+    white-space: nowrap;
+  }
   .checklist-bubble {
     align-self: stretch;
     max-width: 100%;
@@ -523,7 +544,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.41</span>
+    <span class="version-badge">v1.42</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -816,11 +837,15 @@ Geen losse opsomming toevoegen (de app toont zelf een aanvinkbare lijst). Vergee
 - Het advies begin je altijd met de regel "ADVIES:" gevolgd door:
   1. Het meest waarschijnlijke niveau
   2. Een korte onderbouwing (2-4 zinnen)
-  3. Een concreet VERVOLGSTAPPENPLAN (geen losse zin) met de formele route/het document per punt: bij extra ondersteuning → school adviseren dit in te brengen bij lokaal netwerk/Loket + OPP opstellen/aanpassen (bijlage B); bij gespecialiseerd → TLV via Kindkans/TLA-commissie ÓF middelen gespecialiseerde ondersteuning binnen eigen school (benoem welke route hier logischer is en waarom); bij (dreigend) schoolverzuim → afwijken onderwijstijd + OPP-vereisten a-h; noem relevante expertise uit het regionale portfolio waar van toepassing. Let op: lokaal netwerk/Loket, TLV/Kindkans, en OPP zijn schoolgebonden acties — CJG adviseert/ondersteunt, voert niet zelf uit.
-  4. Waar relevant: de rol van het CJG — NOOIT zelf inbrengen bij het lokale netwerk/Loket; wel: signaal delen met school, meedenken over thuissituatie, doorverwijzen naar jeugdhulp
-  5. ALLEEN bij risico op vermenging: een apart punt "Let op — onderwijs versus jeugdzorg:" met een korte, concrete uitleg welk deel onderwijsroute is en welk deel mogelijk een aparte jeugdhulpvraag is — anders weglaten
-  6. Een regel "Bronnen:" met 1-3 links, UITSLUITEND uit de SWV RGV-lijst bij "regulier" of de Berséba-lijst bij "reformatorisch" — nooit mengen, nooit een niet-vermelde URL gebruiken
-  7. Een duidelijke disclaimer: eerste richting, geen formeel besluit, de school/het samenwerkingsverband maakt de uiteindelijke afweging
+  3. Een OBJECTIVERINGSTABEL: een markdown-tabel die per relevant, TOETSBAAR criterium uit de documentatie hierboven (de "wat valt niet onder basisondersteuning"-grenzen per dimensie, de legitimerende-voorbeelden-lijsten per overstap, en bij een mogelijke S(B)O-plaatsing ook de Bijlage D-criteria) aangeeft of het bij DEZE casus wel of niet van toepassing is, met een korte, feitelijke toelichting gebaseerd op wat er in het gesprek is verteld. Doel: een objectief, herleidbaar overzicht dat bruikbaar is in een gesprek met bijvoorbeeld een ouder of een IB'er — dus GEEN eigen interpretatie of vermoeden, alleen wat uit de antwoorden van de gebruiker blijkt. Kies 3-6 criteria die het meest relevant zijn voor de vastgestelde niveau-grens (niet uitputtend alles opsommen). Formaat (exact zo, met | als scheidingsteken, inclusief de koppen-scheidingsregel):
+| Criterium | Van toepassing? | Toelichting |
+|---|---|---|
+| [kort, concreet criterium uit de documentatie] | Ja / Nee / Onduidelijk | [feitelijke, korte onderbouwing] |
+  4. Een concreet VERVOLGSTAPPENPLAN (geen losse zin) met de formele route/het document per punt: bij extra ondersteuning → school adviseren dit in te brengen bij lokaal netwerk/Loket + OPP opstellen/aanpassen (bijlage B); bij gespecialiseerd → TLV via Kindkans/TLA-commissie ÓF middelen gespecialiseerde ondersteuning binnen eigen school (benoem welke route hier logischer is en waarom); bij (dreigend) schoolverzuim → afwijken onderwijstijd + OPP-vereisten a-h; noem relevante expertise uit het regionale portfolio waar van toepassing. Let op: lokaal netwerk/Loket, TLV/Kindkans, en OPP zijn schoolgebonden acties — CJG adviseert/ondersteunt, voert niet zelf uit.
+  5. Waar relevant: de rol van het CJG — NOOIT zelf inbrengen bij het lokale netwerk/Loket; wel: signaal delen met school, meedenken over thuissituatie, doorverwijzen naar jeugdhulp
+  6. ALLEEN bij risico op vermenging: een apart punt "Let op — onderwijs versus jeugdzorg:" met een korte, concrete uitleg welk deel onderwijsroute is en welk deel mogelijk een aparte jeugdhulpvraag is — anders weglaten
+  7. Een regel "Bronnen:" met 1-3 links, UITSLUITEND uit de SWV RGV-lijst bij "regulier" of de Berséba-lijst bij "reformatorisch" — nooit mengen, nooit een niet-vermelde URL gebruiken
+  8. Een duidelijke disclaimer: eerste richting, geen formeel besluit, de school/het samenwerkingsverband maakt de uiteindelijke afweging
 - OMGAAN MET HIATEN IN JE KENNIS: deze instructies dekken de meest voorkomende situaties bij SWV RGV, Berséba, SWV VO Gelderse Vallei en POBV, maar NIET alles — geen MBO, geen volledige PDF-bijlagen (alleen samenvattingen van hoofdpagina's), en geen fijnmazige procedurele details (exacte deadlines, formuliervelden) buiten wat hierboven expliciet genoemd staat. (Cluster 1/2 is wél herkenbaar — zie "LANDELIJK GEREGELDE PROCEDURES" hierboven, dat moet je actief signaleren, niet als hiaat afdoen.) Wanneer een vraag of casus duidelijk BUITEN wat hierboven beschreven staat valt, zeg dat dan EXPLICIET tegen de gebruiker — bijvoorbeeld: "Dit specifieke punt staat niet in mijn beschikbare documentatie; ik raad aan dit te verifiëren bij de school/het samenwerkingsverband zelf." Verzin NOOIT een plausibel klinkend maar niet-onderbouwd antwoord voor iets dat niet in deze instructies staat — onzekerheid benoemen is altijd beter dan een zelfverzekerd fout antwoord.
 - Antwoord altijd in het Nederlands, bondig en zakelijk maar vriendelijk.
 `;
@@ -1469,17 +1494,56 @@ function renderMarkdownLite(rawText) {
   const lines = escaped.split(/\n/);
   let html = '';
   let listType = null; // 'ul' | 'ol' | null
+  let inTable = false;
 
   function closeList() {
     if (listType === 'ul') html += '</ul>';
     if (listType === 'ol') html += '</ol>';
     listType = null;
   }
+  function closeTable() {
+    if (inTable) { html += '</tbody></table></div>'; inTable = false; }
+  }
 
-  for (const line of lines) {
+  // Markdown-tabelregel: | cel | cel | ... | (minimaal 2 kolommen, begint/eindigt met |).
+  // De scheidingsregel (|---|---|) wordt herkend en overgeslagen, niet als data-rij getoond.
+  function isTableRow(line) {
+    return /^\s*\|.+\|\s*$/.test(line);
+  }
+  function isTableSeparator(line) {
+    return /^\s*\|?[\s:|-]+\|?\s*$/.test(line) && line.includes('-');
+  }
+  function splitTableCells(line) {
+    return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const bulletMatch = line.match(/^[-*]\s+(.*)/);
     const numberMatch = line.match(/^\d+\.\s+(.*)/);
     const headerMatch = line.match(/^#{1,6}\s+(.*)/);
+
+    if (isTableRow(line)) {
+      if (!inTable) {
+        closeList();
+        html += '<div class="table-scroll"><table><thead><tr>';
+        splitTableCells(line).forEach(cell => { html += '<th>' + inlineMarkdown(cell) + '</th>'; });
+        html += '</tr></thead><tbody>';
+        inTable = true;
+        // Direct volgende regel is meestal de |---|---|-scheidingsregel: die tonen we niet als
+        // data-rij, gewoon overslaan als hij er staat.
+        if (i + 1 < lines.length && isTableSeparator(lines[i + 1])) i++;
+      } else if (isTableSeparator(line)) {
+        // veiligheidsnet: een scheidingsregel die niet direct na de header kwam, gewoon overslaan
+      } else {
+        html += '<tr>';
+        splitTableCells(line).forEach(cell => { html += '<td>' + inlineMarkdown(cell) + '</td>'; });
+        html += '</tr>';
+      }
+      continue;
+    } else if (inTable) {
+      closeTable();
+    }
 
     if (bulletMatch) {
       if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; }
@@ -1499,6 +1563,7 @@ function renderMarkdownLite(rawText) {
     }
   }
   closeList();
+  closeTable();
   return html;
 }
 
