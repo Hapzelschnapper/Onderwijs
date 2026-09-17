@@ -187,6 +187,28 @@
     font-weight: 700;
     white-space: nowrap;
   }
+  .abbr-term {
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--accent);
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .abbr-tooltip {
+    display: none;
+    position: fixed;
+    z-index: 50;
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  }
+  .abbr-tooltip strong {
+    color: var(--accent-soft);
+  }
   .checklist-bubble {
     align-self: stretch;
     max-width: 100%;
@@ -544,7 +566,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.47</span>
+    <span class="version-badge">v1.48</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -1302,6 +1324,7 @@ function showChecklistBubble(introText) {
   const q = document.createElement('p');
   q.className = 'checklist-question';
   q.innerHTML = renderFormattedContent(introText || "Wat heeft de school tot nu toe al geprobeerd?");
+  applyAbbreviations(q);
   wrap.appendChild(q);
 
   const itemsContainer = document.createElement('div');
@@ -1380,11 +1403,13 @@ function addBubble(role, text) {
     div.className = 'bubble advies';
     const cleanText = text.replace(/^ADVIES:\s*/i, '');
     div.innerHTML = '<span class="label">Advies</span>' + renderFormattedContent(cleanText);
+    applyAbbreviations(div);
   } else if (role === 'ai') {
     // AI-vragen kunnen ook markdown-opmaak bevatten (bv. **nadruk**) -- zelfde renderer als het
     // advies-blok, zodat sterretjes/koppeltekens niet letterlijk zichtbaar blijven.
     div.className = 'bubble ai';
     div.innerHTML = renderFormattedContent(text);
+    applyAbbreviations(div);
   } else {
     div.className = 'bubble ' + role;
     div.textContent = text;
@@ -1510,6 +1535,130 @@ function linkifyHtml(html) {
 function renderFormattedContent(text) {
   return linkifyHtml(renderMarkdownLite(text));
 }
+
+/* ---------- Afkortingen aantikbaar maken, met beknopte uitleg ---------- */
+const ABBREVIATIONS = {
+  "OPP": "Ontwikkelingsperspectiefplan — document met de ondersteuningsbehoeften, doelen en aanpak voor een leerling; verplicht bij extra en gespecialiseerde ondersteuning.",
+  "TLV": "Toelaatbaarheidsverklaring — formeel document dat plaatsing op speciaal (basis)onderwijs mogelijk maakt.",
+  "SWV": "Samenwerkingsverband — het regionale (of landelijke) verband van scholen dat verantwoordelijk is voor passend onderwijs.",
+  "IB'er": "Intern begeleider — coördineert de ondersteuning op een basisschool, aanspreekpunt voor leerkrachten en ouders.",
+  "HGW": "Handelingsgericht Werken — cyclische werkwijze (waarnemen → begrijpen → plannen → realiseren) om ondersteuning planmatig en doelgericht vorm te geven.",
+  "RPB": "Regionaal Procesbegeleider — begeleidt het lokale netwerk bij SWV RGV en checkt de volledigheid van dossiers.",
+  "TLA": "Toelaatbaarheidsadviescommissie — onafhankelijke commissie van SWV RGV die adviseert over TLV-aanvragen.",
+  "CTP": "Commissie van Toewijzing en Plaatsing — POBV's tegenhanger van een TLA-commissie, adviseert over arrangementen en TLV's.",
+  "SOP": "Schoolondersteuningsprofiel — beschrijving van de ondersteuning die een school kan bieden (bij SWV RGV sinds 2025-2026 vervangen door vermelding in de schoolgids).",
+  "S(B)O": "Speciaal (Basis)Onderwijs — verzamelterm voor SBO en SO samen.",
+  "SBO": "Speciaal Basisonderwijs — onderwijs voor leerlingen die meer nodig hebben dan het regulier basisonderwijs kan bieden, maar geen SO-niveau.",
+  "VSO": "Voortgezet Speciaal Onderwijs — speciaal onderwijs op VO-niveau.",
+  "BAD": "Brede Ambulante Dienst — de dienst bij Berséba die ambulante begeleiding op scholen verzorgt bij een toegekend arrangement.",
+  "OPDC": "Orthopedagogisch Didactisch Centrum — voorziening bij POBV voor leerlingen die tijdelijk extra ondersteuning nodig hebben buiten de eigen school.",
+  "NT2": "Nederlands als Tweede Taal — ondersteuning voor leerlingen die het Nederlands nog niet als moedertaal beheersen.",
+  "ZML": "Zeer Moeilijk Lerend — leerlingen met een verstandelijke beperking die zeer moeilijk lerend zijn.",
+  "HB": "Hoogbegaafd(heid).",
+  "CJG": "Centrum voor Jeugd en Gezin — gemeentelijke organisatie voor opvoed- en opgroeiondersteuning en jeugdhulp.",
+  "GGZ": "Geestelijke Gezondheidszorg.",
+  "GGD": "Gemeentelijke/Gemeenschappelijke Gezondheidsdienst — o.a. de jeugdarts/jeugdverpleegkundige.",
+  "OOGO": "Op Overeenstemming Gericht Overleg — verplicht overleg tussen gemeente en SWV (of school en ouders) over het ondersteuningsplan/OPP.",
+  "ROD": "Register Onderwijsdeelnemers — landelijk systeem waarin scholen het OPP van een leerling moeten registreren.",
+  "DUO": "Dienst Uitvoering Onderwijs — overheidsorganisatie die het onderwijs (mede) bekostigt en registreert.",
+  "WEC": "Wet op de Expertisecentra — wettelijk kader voor (voortgezet) speciaal onderwijs.",
+  "POBV": "Passend Onderwijs Barneveld-Veenendaal — het samenwerkingsverband voor voortgezet onderwijs in Veenendaal en Barneveld.",
+  "RBO": "Regionaal Besturenoverleg Onderwijs — regionaal overleg tussen schoolbesturen, SWV's en gemeenten.",
+  "LVS": "LeerlingVolgSysteem — systeem waarin scholen de ontwikkeling van leerlingen bijhouden.",
+  "BIG": "Wet Beroepen in de Individuele Gezondheidszorg — regelt welke medische handelingen alleen door geregistreerde professionals mogen worden uitgevoerd.",
+  "EMB": "Ernstig Meervoudige Beperking.",
+  "CJK": "Contactpersoon Jonge Kind — begeleidt de overgang van voorschoolse voorziening naar de basisschool bij (vermoede) extra ondersteuningsbehoeften.",
+};
+
+// Eén gecombineerde regex, met woordgrenzen (\b) zodat bv. "SO" niet per ongeluk binnen "VSO" matcht.
+const ABBR_REGEX = new RegExp(
+  '\\b(' + Object.keys(ABBREVIATIONS)
+    .sort((a, b) => b.length - a.length) // langere termen eerst proberen
+    .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|') + ')\\b',
+  'g'
+);
+
+function wrapAbbreviationsInTextNode(textNode) {
+  const text = textNode.nodeValue;
+  ABBR_REGEX.lastIndex = 0;
+  if (!ABBR_REGEX.test(text)) return;
+  ABBR_REGEX.lastIndex = 0;
+
+  const frag = document.createDocumentFragment();
+  let lastIndex = 0;
+  let match;
+  while ((match = ABBR_REGEX.exec(text))) {
+    if (match.index > lastIndex) frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    const span = document.createElement('span');
+    span.className = 'abbr-term';
+    span.textContent = match[0];
+    span.dataset.abbr = match[0];
+    frag.appendChild(span);
+    lastIndex = ABBR_REGEX.lastIndex;
+  }
+  if (lastIndex < text.length) frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+  textNode.parentNode.replaceChild(frag, textNode);
+}
+
+// Loopt alle tekst-nodes binnen een element af en verpakt afkortingen -- raakt bewust nooit bestaande
+// tags/attributen aan (bv. een <a href>), alleen de losse tekst ertussen.
+function applyAbbreviations(rootEl) {
+  const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  nodes.forEach(wrapAbbreviationsInTextNode);
+}
+
+// Eén gedeeld tooltip-element voor de hele pagina, getoond bij een tik op een afkorting.
+const abbrTooltip = document.createElement('div');
+abbrTooltip.className = 'abbr-tooltip';
+document.body.appendChild(abbrTooltip);
+
+function showAbbrTooltip(targetEl) {
+  const term = targetEl.dataset.abbr;
+  const explanation = ABBREVIATIONS[term];
+  if (!explanation) return;
+  abbrTooltip.innerHTML = '<strong>' + term + '</strong><br>' + explanation;
+  abbrTooltip.style.display = 'block';
+
+  const rect = targetEl.getBoundingClientRect();
+  const tooltipWidth = Math.min(280, window.innerWidth - 24);
+  abbrTooltip.style.width = tooltipWidth + 'px';
+  let left = rect.left;
+  if (left + tooltipWidth > window.innerWidth - 12) left = window.innerWidth - tooltipWidth - 12;
+  if (left < 12) left = 12;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow > 120 || spaceBelow > rect.top) {
+    abbrTooltip.style.top = (rect.bottom + 6) + 'px';
+    abbrTooltip.style.bottom = 'auto';
+  } else {
+    abbrTooltip.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
+    abbrTooltip.style.top = 'auto';
+  }
+  abbrTooltip.style.left = left + 'px';
+}
+
+function hideAbbrTooltip() {
+  abbrTooltip.style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.classList && e.target.classList.contains('abbr-term')) {
+    if (abbrTooltip.style.display === 'block' && abbrTooltip._lastTarget === e.target) {
+      hideAbbrTooltip();
+      abbrTooltip._lastTarget = null;
+    } else {
+      showAbbrTooltip(e.target);
+      abbrTooltip._lastTarget = e.target;
+    }
+    e.stopPropagation();
+  } else if (!abbrTooltip.contains(e.target)) {
+    hideAbbrTooltip();
+    abbrTooltip._lastTarget = null;
+  }
+});
 
 function showTyping() {
   const div = document.createElement('div');
