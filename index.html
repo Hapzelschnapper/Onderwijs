@@ -575,7 +575,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.49</span>
+    <span class="version-badge">v1.50</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -1141,6 +1141,20 @@ const KNOWN_SCHOOLS = [
   { match: ['rembrandt college', 'rembrandt'], swv: 'POBV', regio: 'Barneveld-Veenendaal', typeValue: 'vo-pobv' },
   { match: ['blink veenendaal', 'blink'], swv: 'POBV', regio: 'Barneveld-Veenendaal (VSO)', typeValue: 'vo-pobv' },
   { match: ['donnerschool'], swv: 'POBV', regio: 'Barneveld-Veenendaal', typeValue: 'vo-pobv' },
+
+  // Reformatorische PO-scholen (Berséba, regio Midden) -- bevestigd via DUO-denominatiegegevens.
+  // Let op "Rehobothschool": expliciet NIET als kale term opgenomen, want er bestaat ook een
+  // ándere Rehobothschool in Veenendaal die Protestants-Christelijk is (dus gewoon SWV RGV, niet
+  // Berséba) -- alleen de combinatie met "Kootwijkerbroek" wordt daarom herkend, zodat de
+  // Veenendaalse Rehobothschool niet per ongeluk als reformatorisch wordt aangemerkt.
+  { match: ['eben haezerschool', 'eben haëzerschool'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' },
+  { match: ['rehobothschool kootwijkerbroek', 'rehoboth kootwijkerbroek'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' },
+  { match: ['fraanjeschool', 'ds. j. fraanjeschool', 'ds j fraanjeschool'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' },
+  { match: ['school met de bijbel ruitenbeek', 'ruitenbeekschool', 'ruitenbeek'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' },
+  { match: ['stadhouder willem iii', 'stadhouder willem 3'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' },
+  { match: ['calvijnschool'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' }, // vangt zowel "Calvijnschool" (Ederveen) als "Johannes Calvijnschool" (Veenendaal) -- zelfde uitkomst
+  { match: ['de wittenberg', 'wittenberg'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' },
+  { match: ['steenblok'], swv: 'Berséba', regio: 'regio Midden', typeValue: 'reformatorisch' },
 ];
 
 function detectSchoolSWV(schoolName) {
