@@ -17,6 +17,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ondersteuning">
 
+<!-- PDF-export van het adviesblok: html2canvas rendert de bubble naar een afbeelding,
+     jsPDF zet die (gepagineerd) in een downloadbaar PDF-bestand. Beide client-side, geen
+     server nodig. Als deze CDN's niet laden (geen internet) valt de downloadknop terug op
+     de browser-printfunctie -- zie downloadAdviesAlsPdf(). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+
 <style>
   :root {
     --bg: #f7f5f2;
@@ -158,6 +165,29 @@
     text-transform: uppercase;
     color: var(--advies-border);
     margin-bottom: 6px;
+  }
+  .pdf-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding: 9px 16px;
+    border-radius: 9px;
+    border: 1px solid var(--advies-border);
+    background: #fff;
+    color: var(--advies-border);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .pdf-download-btn:hover:not(:disabled) {
+    background: var(--advies-border);
+    color: #fff;
+  }
+  .pdf-download-btn:disabled {
+    opacity: .6;
+    cursor: default;
   }
   .bubble ul, .bubble ol {
     margin: 4px 0 8px;
@@ -575,7 +605,7 @@
 <body>
 <div class="app">
   <header>
-    <span class="version-badge">v1.52</span>
+    <span class="version-badge">v1.53</span>
     <h1>Ondersteuningsniveau-adviseur</h1>
     <p>Beantwoord een paar vragen over de casus — je krijgt een onderbouwd advies.</p>
     <div class="tabs">
@@ -1542,6 +1572,12 @@ function addBubble(role, text) {
     const cleanText = text.replace(/^ADVIES:\s*/i, '');
     div.innerHTML = '<span class="label">Advies</span>' + renderFormattedContent(cleanText);
     applyAbbreviations(div);
+    const pdfBtn = document.createElement('button');
+    pdfBtn.type = 'button';
+    pdfBtn.className = 'pdf-download-btn';
+    pdfBtn.textContent = '⬇ Download als PDF';
+    pdfBtn.addEventListener('click', () => downloadAdviesAlsPdf(div, pdfBtn));
+    div.appendChild(pdfBtn);
   } else if (role === 'ai') {
     // AI-vragen kunnen ook markdown-opmaak bevatten (bv. **nadruk**) -- zelfde renderer als het
     // advies-blok, zodat sterretjes/koppeltekens niet letterlijk zichtbaar blijven.
@@ -1555,6 +1591,53 @@ function addBubble(role, text) {
   chatEl.appendChild(div);
   chatEl.scrollTop = chatEl.scrollHeight;
   return div;
+}
+
+// Zet het adviesblok (inclusief label, opmaak en tabel) om naar een downloadbaar PDF-bestand,
+// client-side via html2canvas (rendert de bubble naar een afbeelding) + jsPDF (plaatst die
+// gepagineerd in een PDF). Beide libraries laden via CDN met "defer" (zie <head>) -- als dat om
+// wat voor reden dan ook mislukt (geen internet, CDN geblokkeerd), valt deze knop terug op de
+// ingebouwde afdrukfunctie van de browser, waarmee ook "Opslaan als PDF" gekozen kan worden.
+function downloadAdviesAlsPdf(bubbleEl, btn) {
+  const jsPdfReady = typeof window.jspdf !== 'undefined' && typeof window.html2canvas !== 'undefined';
+  if (!jsPdfReady) {
+    window.print();
+    return;
+  }
+
+  const origLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'PDF wordt gemaakt...';
+  // Knop zelf niet mee laten renderen in de PDF -- tijdelijk verbergen tijdens het vastleggen.
+  btn.style.display = 'none';
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = 32;
+  const pageWidth = doc.internal.pageSize.getWidth() - margin * 2;
+
+  const restore = () => {
+    btn.style.display = '';
+    btn.disabled = false;
+    btn.textContent = origLabel;
+  };
+
+  doc.html(bubbleEl, {
+    x: margin,
+    y: margin,
+    width: pageWidth,
+    windowWidth: bubbleEl.scrollWidth || 700,
+    autoPaging: 'text',
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    callback: function (pdfDoc) {
+      const vandaag = new Date().toLocaleDateString('nl-NL').split('-').reverse().join('-'); // dd-mm-jjjj -> jjjj-mm-dd
+      pdfDoc.save('advies-ondersteuningsniveau-' + vandaag + '.pdf');
+      restore();
+    }
+  }).catch(function () {
+    restore();
+    window.print(); // terugval als het genereren onverwacht faalt
+  });
 }
 
 function escapeHtml(str) {
